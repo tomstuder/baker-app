@@ -41,16 +41,19 @@ Deploy: every push to `main` runs `.github/workflows/deploy.yml`, which builds a
 
 ## Planned design (agreed with the user; not built yet)
 
-- **Git is the database.** There's no backend or hosted DB:
-  - Content will live as Markdown files with a header block under `content/`: `recipes/<slug>/recipe.md`, `recipes/<slug>/bakes/<date>.md`, `recipes/<slug>/images/`, `diary/`, and `references/` (links, glossary, `conversions.json`, `files/` for PDFs).
-  - The app reads these files from the public repo and writes them by committing through the GitHub API.
+- **Git is the database, in a separate content repo: `tomstuder/Recipes`** (public, CC0). This repo is only the app code. There's no backend or hosted DB:
+  - Layout: `config.yml` (category lists per section), `recipes/<slug>/recipe.md`, `recipes/<slug>/bakes/<date>.md`, `recipes/<slug>/images/`, `diary/<date>-<slug>.md`, `references/techniques/<slug>.md` (plus links, glossary, conversions and files to come).
+  - **The file format is documented in the Recipes repo's README, which is the spec.** Each file has a YAML header block (title, category, tags, status draft/testing/tested, created, yield, servings, time, oven, equipment, ingredients) followed by a Markdown body. Ingredients are `groups[].items[]` with `name`, `amount` (as written), `grams` (the source of truth), `pct` (baker's %, which the app recalculates on save), `flour: true` (counts toward the 100% base), `hydration` (marks a preferment), `water` (water-content %), `estimated` and `note`. Parse it with the `yaml` package.
+  - Reading needs no index file: one GitHub API call lists every file (`branches/main`, then `git/trees/<sha>?recursive=1`), the files themselves come from `raw.githubusercontent.com/tomstuder/Recipes/<commitSha>/<path>`, and results are cached by blob SHA so only changed files are downloaded again. Without a token, the GitHub API allows 60 requests per hour per visitor, so cache the file list briefly.
+  - Writing commits through the GitHub API to `Recipes` only. The editing token is limited to that repo, so it can't touch the app code or its deploy workflow.
+  - Mapping to the calculator: `flour: true` items become flours, items with `hydration` become preferments, and everything else becomes an ingredient with `pct = grams / flour × 100` and `waterPct = water`.
 - **Security model:**
-  - Anyone can read the site. To edit, the user pastes a fine-grained personal access token that is limited to this repo, has Contents read/write only, and expires.
+  - Anyone can read the site. To edit, the user pastes a fine-grained personal access token that is limited to the `Recipes` content repo, has Contents read/write only, and expires.
   - The token is stored encrypted (AES-GCM with a key derived from a passphrase) in browser storage. Without it, the app is read-only.
   - Rendered Markdown must be sanitized so it can't run scripts and steal the token. Keep runtime dependencies minimal.
 - **Calculator scope:** multiple flours, ingredients as % of total flour, total hydration including water in milk, eggs and butter, preferments (levain, poolish, biga) with their own hydration, scaling by dough weight, loaf count or flour weight, and saving a formula into a recipe.
 - **Recipe log:** recipes plus individual bake entries (date, tweaks, temperatures, timings, rating, photos). Diary posts can link to recipes and bakes. Photos are resized in the browser and committed to the repo.
-- **Categories and tags** (user request): recipes, diary posts and reference notes each get one category plus any number of free-form tags, stored in each file's header block. Categories come from a short, editable list per section. Starting recipe categories: Bread, Enriched bread, Pastry, Cakes & cookies, Pizza & flatbread, Pasta & noodles, Starters & preferments. List and search views filter by category and tag.
+- **Categories and tags** (user request): recipes, diary posts and reference notes each get one category plus any number of free-form tags, stored in each file's header block. Categories come from a short, editable list per section. The lists live in the content repo's `config.yml`. Recipes: Bread, Enriched bread, Quick breads & muffins, Pastry, Cakes & cookies, Pizza & flatbread, Pasta & noodles, Starters & preferments. Diary: Bake log, Experiment, Learning, Kitchen notes. References: Techniques, Glossary, Links & books, Conversions. List and search views filter by category and tag.
 - **Build order:** 1) shell and deploy (done), 2) calculator (done), 3) content layer with GitHub read/write and token login, then recipes and bakes, 4) diary, then references and uploads.
 - **Units:** grams by default; temperatures in both °F and °C.
 
