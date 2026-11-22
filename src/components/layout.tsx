@@ -3,9 +3,14 @@ import { Link, NavLink, Outlet } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { SocialLinks } from '@/components/social-links'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { useContent } from '@/hooks/use-content'
+import { DEFAULT_HOME, loadHome } from '@/lib/content'
 import { NAV } from '@/lib/nav'
 import { cn } from '@/lib/utils'
+
+const YEAR = new Date().getFullYear()
 
 function navClass({ isActive }: { isActive: boolean }) {
   return cn(
@@ -16,6 +21,7 @@ function navClass({ isActive }: { isActive: boolean }) {
 
 export function Layout() {
   const [open, setOpen] = useState(false)
+  const home = useContent('home-footer', loadHome).data ?? DEFAULT_HOME
 
   return (
     <div className="min-h-svh flex flex-col">
@@ -65,8 +71,16 @@ export function Layout() {
         <Outlet />
       </main>
 
-      <footer className="border-t py-6 text-center text-xs text-muted-foreground">
-        Recipes are stored as files in git.
+      <footer className="border-t">
+        <div className="mx-auto flex max-w-5xl flex-col items-center gap-3 px-4 py-8 text-xs text-muted-foreground sm:flex-row sm:justify-between">
+          <p>
+            © {YEAR} {home.name} · Recipes are kept in{' '}
+            <a href="https://github.com/tomstuder/Recipes" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">
+              git
+            </a>
+          </p>
+          <SocialLinks social={home.social} size="sm" />
+        </div>
       </footer>
     </div>
   )

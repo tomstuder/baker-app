@@ -154,10 +154,10 @@ export function calculate(f: Formula, scale: Scale): Batch {
   }
 }
 
-/** Grams for display: one decimal under 20 g (salt, yeast), whole grams above. */
+/** Grams for display: up to one decimal under 20 g (salt, yeast), whole grams above. */
 export function formatGrams(g: number): string {
   if (!Number.isFinite(g)) return '–'
-  return g < 20 ? (Math.round(g * 10) / 10).toFixed(1) : String(Math.round(g))
+  return g < 20 ? String(Math.round(g * 10) / 10) : String(Math.round(g))
 }
 
 export function formatPct(p: number): string {

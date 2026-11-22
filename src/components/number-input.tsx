@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
@@ -19,14 +19,16 @@ type Props = {
  */
 export function NumberInput({ value, onChange, suffix, className, min = 0, step, ...rest }: Props) {
   const [text, setText] = useState(Number.isFinite(value) ? String(value) : '')
+  const [synced, setSynced] = useState(value)
 
-  useEffect(() => {
+  // When the value changes from outside (reset, loading a recipe), show it. Typing updates both
+  // text and value together, so this only fires for outside changes. (Adjusting state during
+  // render is React's recommended alternative to an effect here.)
+  if (!Object.is(synced, value)) {
+    setSynced(value)
     const parsed = text.trim() === '' ? Number.NaN : Number(text)
-    if (!Object.is(parsed, value) && !(Number.isNaN(parsed) && Number.isNaN(value))) {
-      setText(Number.isFinite(value) ? String(value) : '')
-    }
-    // Only resync when the value changes from outside (reset, preset); typing updates text itself.
-  }, [value])
+    if (!Object.is(parsed, value)) setText(Number.isFinite(value) ? String(value) : '')
+  }
 
   return (
     <div className={cn('relative', className)}>

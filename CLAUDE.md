@@ -39,6 +39,17 @@ Deploy: every push to `main` runs `.github/workflows/deploy.yml`, which builds a
   - The working formula is saved to localStorage under `calculator:v1`.
   - `components/number-input.tsx` keeps the typed text separately from the number, so a blank field becomes NaN, which the math treats as 0.
 
+- **Content layer (read-only, built):**
+  - `src/lib/content.ts` loads the content repo (snapshot, `readText`, `parseDoc`) and turns files into typed objects (`toRecipe`, `toDiaryPost`, `toHome`, `loadConfig`).
+  - `src/hooks/use-content.ts` gives pages `{ data, snap, error, loading }` keyed by a string.
+  - `src/lib/recipe-math.ts` connects recipes to the calculator: `recipeStats`, `recipeToFormula` (opened via router state `navigate('/calculator', { state })`) and `formatOven`.
+  - `components/markdown.tsx` renders recipe and post bodies, resolving relative image paths to the content repo. It must never enable raw HTML.
+- **Pages:**
+  - `/` is the bio home page, driven by `home.md` in the content repo (name, tagline, `hero` and `portrait` photo paths, `featured` recipe slugs, `social` links). `DEFAULT_HOME` is the fallback.
+  - `/recipes` lists recipes with category filters (`?category=`, `?tag=`).
+  - `/recipes/:slug` shows one recipe.
+  - The diary and references pages are still placeholders.
+
 ## Planned design (agreed with the user; not built yet)
 
 - **Git is the database, in a separate content repo: `tomstuder/Recipes`** (public, CC0). This repo is only the app code. There's no backend or hosted DB:

@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
 import { Check, Copy, Plus, RotateCcw, Trash2 } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
 import { PageHeader } from '@/components/page-header'
 import { NumberInput } from '@/components/number-input'
 import { Badge } from '@/components/ui/badge'
@@ -44,7 +45,11 @@ function load(): Saved {
 }
 
 export function CalculatorPage() {
-  const [{ formula, scale }, setState] = useState<Saved>(load)
+  // A recipe page can open its formula here by passing { formula, scale } as router state.
+  const incoming = useLocation().state as Partial<Saved> | null
+  const [{ formula, scale }, setState] = useState<Saved>(() =>
+    incoming?.formula?.flours && incoming?.scale?.mode ? { formula: incoming.formula, scale: incoming.scale } : load(),
+  )
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
