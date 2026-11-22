@@ -12,10 +12,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev       # dev server at http://localhost:5173/baker-app/ (note the /baker-app/ base path)
 npm run build     # tsc -b type-check, then vite build into dist/
 npm run lint      # oxlint
+npm test          # vitest run (all tests)
+npx vitest run src/lib/bakers.test.ts      # one file
+npx vitest run -t "overall hydration"      # tests whose name matches
 npx shadcn@latest add <component>   # add shadcn/ui components into src/components/ui/
 ```
-
-No test runner is set up yet.
 
 Deploy: every push to `main` runs `.github/workflows/deploy.yml`, which builds and publishes `dist/` to Pages (Pages `build_type` is `workflow`, not branch-based). Check a run with `gh run list` or `gh run watch`.
 
@@ -31,6 +32,13 @@ Deploy: every push to `main` runs `.github/workflows/deploy.yml`, which builds a
   - Dark mode is the `.dark` class on `<html>`, toggled by `components/theme-toggle.tsx`. It saves the choice in localStorage and falls back to the system setting.
   - Headings use Fraunces (`font-heading`, applied to h1–h3 in the base layer); body text uses Geist.
 
+- **Calculator** (built):
+  - All the math lives in `src/lib/bakers.ts` as pure functions; `pages/calculator.tsx` is only UI.
+  - Convention: every % is relative to the *final-dough* flour (the 100% base). Preferments are added whole as a % of that flour and carry their own flour and water, set by their hydration. "Overall" figures (total flour, hydration, prefermented flour) include preferment flour and water, plus the water inside ingredients (`waterPct`, e.g. milk 87).
+  - The country sourdough example (`countrySourdough()`) is the main test case in `bakers.test.ts`: 90/10 flour, 75% water, 20% levain at 100%, 2% salt, which gives 77.27% overall hydration.
+  - The working formula is saved to localStorage under `calculator:v1`.
+  - `components/number-input.tsx` keeps the typed text separately from the number, so a blank field becomes NaN, which the math treats as 0.
+
 ## Planned design (agreed with the user; not built yet)
 
 - **Git is the database.** There's no backend or hosted DB:
@@ -42,7 +50,8 @@ Deploy: every push to `main` runs `.github/workflows/deploy.yml`, which builds a
   - Rendered Markdown must be sanitized so it can't run scripts and steal the token. Keep runtime dependencies minimal.
 - **Calculator scope:** multiple flours, ingredients as % of total flour, total hydration including water in milk, eggs and butter, preferments (levain, poolish, biga) with their own hydration, scaling by dough weight, loaf count or flour weight, and saving a formula into a recipe.
 - **Recipe log:** recipes plus individual bake entries (date, tweaks, temperatures, timings, rating, photos). Diary posts can link to recipes and bakes. Photos are resized in the browser and committed to the repo.
-- **Build order:** 1) shell and deploy (done), 2) calculator, 3) content layer with GitHub read/write and token login, then recipes and bakes, 4) diary, then references and uploads.
+- **Categories and tags** (user request): recipes, diary posts and reference notes each get one category plus any number of free-form tags, stored in each file's header block. Categories come from a short, editable list per section. Starting recipe categories: Bread, Enriched bread, Pastry, Cakes & cookies, Pizza & flatbread, Pasta & noodles, Starters & preferments. List and search views filter by category and tag.
+- **Build order:** 1) shell and deploy (done), 2) calculator (done), 3) content layer with GitHub read/write and token login, then recipes and bakes, 4) diary, then references and uploads.
 - **Units:** grams by default; temperatures in both °F and °C.
 
 ## Notes
