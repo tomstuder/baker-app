@@ -1,0 +1,50 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## What this is
+
+"Bake Book": a personal baking web app with four sections: a baker's percentage calculator, a recipe log with a history of individual bakes, a diary, and references. It's a static site on GitHub Pages at https://tomstuder.github.io/baker-app/ (repo `tomstuder/baker-app`, public).
+
+## Commands
+
+```sh
+npm run dev       # dev server at http://localhost:5173/baker-app/ (note the /baker-app/ base path)
+npm run build     # tsc -b type-check, then vite build into dist/
+npm run lint      # oxlint
+npx shadcn@latest add <component>   # add shadcn/ui components into src/components/ui/
+```
+
+No test runner is set up yet.
+
+Deploy: every push to `main` runs `.github/workflows/deploy.yml`, which builds and publishes `dist/` to Pages (Pages `build_type` is `workflow`, not branch-based). Check a run with `gh run list` or `gh run watch`.
+
+## Architecture
+
+- **Stack:** Vite + React 19 + TypeScript, Tailwind v4 through `@tailwindcss/vite` (there's no tailwind.config; the theme lives in `src/index.css`), and shadcn/ui with the `radix-nova` style and lucide icons. The `@/` alias points to `src/` and is defined in both `vite.config.ts` and the tsconfigs.
+- **GitHub Pages constraints:**
+  - `base: '/baker-app/'` in `vite.config.ts` must match the repo name.
+  - Routing uses `HashRouter` (in `src/main.tsx`) because Pages can't rewrite deep links. Keep it unless hosting changes.
+- **Routing and navigation:** routes are in `src/App.tsx`, all nested under `components/layout.tsx`, which provides the header, mobile `Sheet` menu and `<Outlet/>`. Menu entries come from `src/lib/nav.ts`, which drives both the header and the home-page cards, so a new section needs a route in `App.tsx` and an entry in `nav.ts`.
+- **Theme:**
+  - Colors are shadcn CSS variables, overridden in `src/index.css` with a warm palette.
+  - Dark mode is the `.dark` class on `<html>`, toggled by `components/theme-toggle.tsx`. It saves the choice in localStorage and falls back to the system setting.
+  - Headings use Fraunces (`font-heading`, applied to h1–h3 in the base layer); body text uses Geist.
+
+## Planned design (agreed with the user; not built yet)
+
+- **Git is the database.** There's no backend or hosted DB:
+  - Content will live as Markdown files with a header block under `content/`: `recipes/<slug>/recipe.md`, `recipes/<slug>/bakes/<date>.md`, `recipes/<slug>/images/`, `diary/`, and `references/` (links, glossary, `conversions.json`, `files/` for PDFs).
+  - The app reads these files from the public repo and writes them by committing through the GitHub API.
+- **Security model:**
+  - Anyone can read the site. To edit, the user pastes a fine-grained personal access token that is limited to this repo, has Contents read/write only, and expires.
+  - The token is stored encrypted (AES-GCM with a key derived from a passphrase) in browser storage. Without it, the app is read-only.
+  - Rendered Markdown must be sanitized so it can't run scripts and steal the token. Keep runtime dependencies minimal.
+- **Calculator scope:** multiple flours, ingredients as % of total flour, total hydration including water in milk, eggs and butter, preferments (levain, poolish, biga) with their own hydration, scaling by dough weight, loaf count or flour weight, and saving a formula into a recipe.
+- **Recipe log:** recipes plus individual bake entries (date, tweaks, temperatures, timings, rating, photos). Diary posts can link to recipes and bakes. Photos are resized in the browser and committed to the repo.
+- **Build order:** 1) shell and deploy (done), 2) calculator, 3) content layer with GitHub read/write and token login, then recipes and bakes, 4) diary, then references and uploads.
+- **Units:** grams by default; temperatures in both °F and °C.
+
+## Notes
+
+- The `npm audit` warnings come from the `shadcn` CLI's own dependencies. It's a dev dependency and never reaches the browser; `npm audit --omit=dev` is clean.
