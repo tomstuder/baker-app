@@ -70,13 +70,17 @@ export function recipeToFormula(r: Recipe): { formula: Formula; scale: Scale } |
   }
 }
 
-/** "350°F" → "350°F · 177°C"; "200C" → "392°F · 200°C". Anything else is returned unchanged. Works for any temperature. */
+/**
+ * Show a temperature in both units: "350°F" → "350°F · 177°C", "200C" → "392°F · 200°C".
+ * A number without a unit ("71", "500º") is taken as °F. Anything else is returned unchanged.
+ */
 export function formatOven(oven: string | undefined): string | undefined {
   if (!oven) return undefined
-  const m = oven.match(/(\d+(?:\.\d+)?)\s*°?\s*([FC])\b/i)
+  const m = oven.trim().match(/^~?(\d+(?:\.\d+)?)\s*(?:°|º|˚|deg(?:rees)?)?\s*([FC])?\.?$/i)
   if (!m) return oven
   const v = Number(m[1])
-  const [f, c] = m[2].toUpperCase() === 'F' ? [v, ((v - 32) * 5) / 9] : [(v * 9) / 5 + 32, v]
+  const unit = (m[2] ?? 'F').toUpperCase()
+  const [f, c] = unit === 'F' ? [v, ((v - 32) * 5) / 9] : [(v * 9) / 5 + 32, v]
   return `${Math.round(f)}°F · ${Math.round(c)}°C`
 }
 

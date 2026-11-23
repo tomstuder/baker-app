@@ -102,6 +102,11 @@ describe('recipe math', () => {
     expect(formatOven('350°F')).toBe('350°F · 177°C')
     expect(formatOven('230 C')).toBe('446°F · 230°C')
     expect(formatOven('hot')).toBe('hot')
+    expect(formatOven('71º')).toBe('71°F · 22°C')
+    expect(formatOven('500')).toBe('500°F · 260°C')
+    expect(formatOven('24 c')).toBe('75°F · 24°C')
+    expect(formatOven('450 degrees F')).toBe('450°F · 232°C')
+    expect(formatOven('450°F, then 425°F')).toBe('450°F, then 425°F')
   })
 })
 
