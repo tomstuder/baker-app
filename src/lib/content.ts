@@ -207,8 +207,10 @@ export type IngredientItem = {
   water?: number
   estimated?: boolean
   note?: string
+  /** Editor-only row key; never written to files. */
+  key?: string
 }
-export type IngredientGroup = { group?: string; note?: string; items: IngredientItem[] }
+export type IngredientGroup = { group?: string; note?: string; items: IngredientItem[]; key?: string }
 export type Status = 'draft' | 'testing' | 'tested'
 
 export type Recipe = {
@@ -264,7 +266,7 @@ export type Bake = {
   batch?: string
   changes: string[]
   temps: { kitchen?: string; dough?: string; oven?: string }
-  timeline: { time: string; step: string }[]
+  timeline: { time: string; step: string; key?: string }[]
   /** Paths relative to the bake file, e.g. ../images/2026-11-23-crumb.jpg */
   photos: string[]
   body: string

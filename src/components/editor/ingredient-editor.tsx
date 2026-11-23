@@ -1,4 +1,9 @@
+import type { ReactNode } from 'react'
+import { DndContext, closestCenter, useDroppable, type DragEndEvent, type DragOverEvent } from '@dnd-kit/core'
+import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react'
+import { DragHandle, SortableRow } from '@/components/editor/sortable'
+import { useDragSensors, withKey } from '@/components/editor/sortable-utils'
 import { NumberInput } from '@/components/number-input'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -20,14 +25,39 @@ export function IngredientEditor({ groups, onChange }: { groups: IngredientGroup
   const setItem = (gi: number, ii: number, patch: Partial<IngredientItem>) =>
     setGroup(gi, { items: groups[gi].items.map((it, i) => (i === ii ? { ...it, ...patch } : it)) })
   const moveItem = (gi: number, ii: number, dir: -1 | 1) => {
-    const items = [...groups[gi].items]
     const j = ii + dir
-    if (j < 0 || j >= items.length) return
-    ;[items[ii], items[j]] = [items[j], items[ii]]
-    setGroup(gi, { items })
+    if (j < 0 || j >= groups[gi].items.length) return
+    setGroup(gi, { items: arrayMove(groups[gi].items, ii, j) })
+  }
+
+  // Drag and drop: rows keep a stable editor-only key; items can move within or between groups.
+  const sensors = useDragSensors()
+  const groupOf = (id: unknown) => groups.findIndex((g) => g.key === id || g.items.some((i) => i.key === id))
+
+  function onDragOver({ active, over }: DragOverEvent) {
+    if (!over) return
+    const from = groupOf(active.id)
+    const to = groupOf(over.id)
+    if (from < 0 || to < 0 || from === to) return
+    const item = groups[from].items.find((i) => i.key === active.id)!
+    const overIndex = groups[to].items.findIndex((i) => i.key === over.id)
+    const target = [...groups[to].items]
+    target.splice(overIndex < 0 ? target.length : overIndex, 0, item)
+    onChange(groups.map((g, i) => (i === from ? { ...g, items: g.items.filter((x) => x.key !== active.id) } : i === to ? { ...g, items: target } : g)))
+  }
+
+  function onDragEnd({ active, over }: DragEndEvent) {
+    if (!over || active.id === over.id) return
+    const gi = groupOf(active.id)
+    if (gi < 0 || gi !== groupOf(over.id)) return
+    const items = groups[gi].items
+    const from = items.findIndex((i) => i.key === active.id)
+    const to = items.findIndex((i) => i.key === over.id)
+    if (from >= 0 && to >= 0) setGroup(gi, { items: arrayMove(items, from, to) })
   }
 
   return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragOver={onDragOver} onDragEnd={onDragEnd}>
     <div className="space-y-6">
       <datalist id="editor-ingredient-presets">
         {INGREDIENT_PRESETS.map((p) => (
@@ -36,7 +66,7 @@ export function IngredientEditor({ groups, onChange }: { groups: IngredientGroup
       </datalist>
 
       {groups.map((g, gi) => (
-        <div key={gi} className="space-y-3 rounded-xl border p-3 sm:p-4">
+        <div key={g.key ?? gi} className="space-y-3 rounded-xl border p-3 sm:p-4">
           <div className="flex flex-wrap items-center gap-2">
             <Input aria-label="Group name" placeholder="Group (optional), e.g. Dough" value={g.group ?? ''} onChange={(e) => setGroup(gi, { group: e.target.value })} className="min-w-40 flex-1 font-medium" />
             <Input aria-label="Group note" placeholder="Note (optional)" value={g.note ?? ''} onChange={(e) => setGroup(gi, { note: e.target.value })} className="min-w-40 flex-[2]" />
@@ -47,13 +77,14 @@ export function IngredientEditor({ groups, onChange }: { groups: IngredientGroup
             )}
           </div>
 
-          <div className="space-y-2">
+          <GroupDropZone id={g.key ?? String(gi)} itemIds={g.items.map((i, ii) => i.key ?? `${gi}-${ii}`)}>
             {g.items.map((it, ii) => {
               const kind = kindOf(it)
               const pct = stats.base > 0 && it.grams !== undefined ? (it.grams / stats.base) * 100 : undefined
               return (
-                <div key={ii} className="space-y-2 rounded-lg bg-muted/40 p-2.5">
+                <SortableRow key={it.key ?? `${gi}-${ii}`} id={it.key ?? `${gi}-${ii}`} className="space-y-2 rounded-lg bg-muted/40 p-2.5">
                   <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+                    <DragHandle label={`Reorder ${it.name || 'ingredient'}`} />
                     <Input
                       aria-label="Ingredient"
                       placeholder="Ingredient"
@@ -63,9 +94,9 @@ export function IngredientEditor({ groups, onChange }: { groups: IngredientGroup
                         const preset = INGREDIENT_PRESETS.find((p) => p.name.toLowerCase() === e.target.value.trim().toLowerCase())
                         setItem(gi, ii, { name: e.target.value, ...(preset && it.water === undefined && preset.waterPct > 0 && { water: preset.waterPct }) })
                       }}
-                      className="min-w-0 basis-full sm:basis-0 sm:flex-1"
+                      className="min-w-0 flex-1"
                     />
-                    <NumberInput aria-label="Grams" value={it.grams ?? NAN} onChange={(v) => setItem(gi, ii, { grams: opt(v) })} suffix="g" className="w-24 shrink-0" />
+                    <NumberInput aria-label="Grams" value={it.grams ?? NAN} onChange={(v) => setItem(gi, ii, { grams: opt(v) })} suffix="g" className="ml-8 w-24 shrink-0 sm:ml-0" />
                     <span className="w-12 shrink-0 text-right text-xs text-muted-foreground tabular-nums" title="Baker's %">
                       {pct !== undefined ? `${formatPct(pct)}%` : ''}
                     </span>
@@ -113,18 +144,18 @@ export function IngredientEditor({ groups, onChange }: { groups: IngredientGroup
                       </Button>
                     </div>
                   </div>
-                </div>
+                </SortableRow>
               )
             })}
-          </div>
-          <Button variant="ghost" size="sm" className="text-primary" onClick={() => setGroup(gi, { items: [...g.items, { name: '' }] })}>
+          </GroupDropZone>
+          <Button variant="ghost" size="sm" className="text-primary" onClick={() => setGroup(gi, { items: [...g.items, withKey({ name: '' })] })}>
             <Plus /> Add ingredient
           </Button>
         </div>
       ))}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button variant="outline" size="sm" onClick={() => onChange([...groups, { group: '', items: [{ name: '' }] }])}>
+        <Button variant="outline" size="sm" onClick={() => onChange([...groups, withKey({ group: '', items: [withKey({ name: '' })] })])}>
           <Plus /> Add group
         </Button>
         {stats.base > 0 && (
@@ -134,5 +165,18 @@ export function IngredientEditor({ groups, onChange }: { groups: IngredientGroup
         )}
       </div>
     </div>
+    </DndContext>
+  )
+}
+
+/** One group's sortable list; also a drop target so items can be dragged into an empty group. */
+function GroupDropZone({ id, itemIds, children }: { id: string; itemIds: string[]; children: ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id })
+  return (
+    <SortableContext id={id} items={itemIds} strategy={verticalListSortingStrategy}>
+      <div ref={setNodeRef} className={`min-h-10 space-y-2 rounded-lg ${isOver && itemIds.length === 0 ? 'bg-primary/10' : ''}`}>
+        {children}
+      </div>
+    </SortableContext>
   )
 }

@@ -7,6 +7,7 @@ import { EditGuard } from '@/components/editor/edit-guard'
 import { Field, ImageField, MarkdownField, TextField } from '@/components/editor/fields'
 import { IngredientEditor } from '@/components/editor/ingredient-editor'
 import { SaveBar } from '@/components/editor/save-bar'
+import { withKey } from '@/components/editor/sortable-utils'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -69,7 +70,7 @@ function RecipeEditLoader() {
 function RecipeForm({ initial, categories, isNew, snap, sha }: { initial: Recipe; categories: string[]; isNew: boolean; snap?: Snapshot; sha?: string }) {
   const { token } = useAuth()
   const navigate = useNavigate()
-  const [r, setR] = useState<Recipe>(initial)
+  const [r, setR] = useState<Recipe>(() => ({ ...initial, ingredients: initial.ingredients.map((g) => withKey({ ...g, items: g.items.map(withKey) })) }))
   const [tagsText, setTagsText] = useState(initial.tags.join(', '))
   const [equipmentText, setEquipmentText] = useState(initial.equipment.join('\n'))
   const [message, setMessage] = useState(isNew ? '' : `Update ${initial.title}`)

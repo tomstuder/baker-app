@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Plus, Star, Trash2 } from 'lucide-react'
+import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { ArrowDown, ArrowLeft, ArrowUp, Plus, Star, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ContentError } from '@/components/content-error'
 import { EditGuard } from '@/components/editor/edit-guard'
 import { MarkdownField, PhotosField, TextField } from '@/components/editor/fields'
 import { SaveBar } from '@/components/editor/save-bar'
+import { DragHandle, SortableRow } from '@/components/editor/sortable'
+import { useDragSensors, withKey } from '@/components/editor/sortable-utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -35,7 +39,7 @@ function blankBake(recipe: Recipe): Bake {
     batch: recipe.yield,
     changes: [],
     temps: { oven: recipe.oven },
-    timeline: [{ time: '', step: '' }],
+    timeline: [withKey({ time: '', step: '' })],
     photos: [],
     body: '',
   }
@@ -65,7 +69,8 @@ function BakeEditLoader() {
 function BakeForm({ recipe, initial, isNew, snap }: { recipe: Recipe; initial: Bake; isNew: boolean; snap?: Snapshot }) {
   const { token } = useAuth()
   const navigate = useNavigate()
-  const [b, setB] = useState<Bake>(initial)
+  const [b, setB] = useState<Bake>(() => ({ ...initial, timeline: initial.timeline.map(withKey) }))
+  const sensors = useDragSensors()
   const [changesText, setChangesText] = useState(initial.changes.join('\n'))
   const [message, setMessage] = useState(isNew ? '' : `Update bake ${initial.date} of ${recipe.title}`)
   const [saving, setSaving] = useState(false)
@@ -84,6 +89,17 @@ function BakeForm({ recipe, initial, isNew, snap }: { recipe: Recipe; initial: B
   }
   const setStep = (i: number, patch: Partial<Bake['timeline'][number]>) =>
     update({ timeline: b.timeline.map((t, j) => (j === i ? { ...t, ...patch } : t)) })
+  const moveStep = (from: number, to: number) => {
+    if (to < 0 || to >= b.timeline.length || from === to) return
+    update({ timeline: arrayMove(b.timeline, from, to) })
+  }
+  const onStepDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over) return
+    moveStep(
+      b.timeline.findIndex((t) => t.key === active.id),
+      b.timeline.findIndex((t) => t.key === over.id),
+    )
+  }
 
   async function save() {
     if (!token) return
@@ -191,16 +207,29 @@ function BakeForm({ recipe, initial, isNew, snap }: { recipe: Recipe; initial: B
             <CardDescription>Optional. Times as you like them: "08:00", "Day 2 9am", "+45 min".</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            {b.timeline.map((t, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <Input aria-label="Time" value={t.time} onChange={(e) => setStep(i, { time: e.target.value })} placeholder="08:00" className="w-28 shrink-0" />
-                <Input aria-label="Step" value={t.step} onChange={(e) => setStep(i, { step: e.target.value })} placeholder="Build levain" className="min-w-0 flex-1" />
-                <Button variant="ghost" size="icon" aria-label="Remove step" onClick={() => update({ timeline: b.timeline.filter((_, j) => j !== i) })} className="shrink-0 text-muted-foreground">
-                  <Trash2 />
-                </Button>
-              </div>
-            ))}
-            <Button variant="ghost" size="sm" className="text-primary" onClick={() => update({ timeline: [...b.timeline, { time: '', step: '' }] })}>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onStepDragEnd}>
+              <SortableContext items={b.timeline.map((t) => t.key!)} strategy={verticalListSortingStrategy}>
+                {b.timeline.map((t, i) => (
+                  <SortableRow key={t.key} id={t.key!} className="flex flex-wrap items-center gap-1.5 rounded-lg bg-background pb-2 sm:flex-nowrap sm:pb-0">
+                    <DragHandle label={`Reorder step ${i + 1}`} />
+                    <Input aria-label="Time" value={t.time} onChange={(e) => setStep(i, { time: e.target.value })} placeholder="08:00" className="w-28 shrink-0" />
+                    <Input aria-label="Step" value={t.step} onChange={(e) => setStep(i, { step: e.target.value })} placeholder="Build levain" className="order-last ml-7.5 min-w-0 basis-full sm:order-none sm:ml-0 sm:basis-auto sm:flex-1" />
+                    <div className="ml-auto flex shrink-0 sm:ml-0">
+                      <Button variant="ghost" size="icon-sm" aria-label="Move step up" disabled={i === 0} onClick={() => moveStep(i, i - 1)}>
+                        <ArrowUp />
+                      </Button>
+                      <Button variant="ghost" size="icon-sm" aria-label="Move step down" disabled={i === b.timeline.length - 1} onClick={() => moveStep(i, i + 1)}>
+                        <ArrowDown />
+                      </Button>
+                    </div>
+                    <Button variant="ghost" size="icon-sm" aria-label="Remove step" onClick={() => update({ timeline: b.timeline.filter((_, j) => j !== i) })} className="shrink-0 text-muted-foreground">
+                      <Trash2 />
+                    </Button>
+                  </SortableRow>
+                ))}
+              </SortableContext>
+            </DndContext>
+            <Button variant="ghost" size="sm" className="text-primary" onClick={() => update({ timeline: [...b.timeline, withKey({ time: '', step: '' })] })}>
               <Plus /> Add step
             </Button>
           </CardContent>

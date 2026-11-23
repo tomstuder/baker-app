@@ -60,6 +60,8 @@ Deploy: every push to `main` runs `.github/workflows/deploy.yml`, which builds a
   - One file per bake at `recipes/<slug>/bakes/<date>[-title][-n].md`. `toBake` and `serializeBake` handle date, title, rating 1–5, batch, changes[], temps {kitchen, dough, oven}, timeline[{time, step}] (written as one quoted line per step) and photos[] (paths relative to the bake file, e.g. `../images/x.jpg`).
   - `newBakePath` avoids name clashes, `bakeCounts(snap)` counts bakes from the file list alone (shown on recipe cards), and `components/bake-log.tsx` renders the log on the recipe page.
   - `deleteFile` in `lib/github.ts` removes a bake, which stays in git history.
+- **Reordering:** ingredient rows (within and between groups) and bake timeline steps can be dragged with `@dnd-kit` (`components/editor/sortable.tsx`: `SortableRow` and `DragHandle`; helpers in `sortable-utils.ts`). Rows carry an editor-only `key` (`withKey`) that the serializers never write. ↑ ↓ buttons remain as a fallback.
+- **Code splitting:** the editor pages are `lazy()` routes in `App.tsx`, so visitors never download dnd-kit or the editors.
   - Photos: `ImageField` resizes in the browser (`lib/image.ts`, 2000 px JPEG) and uploads right away as its own commit to `recipes/<slug>/images/` or `images/home/`. `PhotosField` does the same for several photos. Stored paths are relative to the content file (`relativePath`).
 
 ## Planned design (agreed with the user; not built yet)
