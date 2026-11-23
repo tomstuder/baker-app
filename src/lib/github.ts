@@ -103,3 +103,35 @@ export async function deleteFile(opts: { token: string; path: string; message: s
   )
   return { commitSha: res.commit.sha }
 }
+
+/**
+ * Delete several files in ONE commit, using the Git Data API (ref → commit → tree → new commit →
+ * move the branch). Moving the branch is not forced, so if anything was committed in between,
+ * GitHub refuses and nothing is deleted.
+ */
+export async function deletePaths(opts: { token: string; paths: string[]; message: string }): Promise<{ commitSha: string }> {
+  if (!opts.paths.length) throw new GitHubWriteError('Nothing to delete.', 'other')
+  const repo = `/repos/${CONTENT_REPO}/git`
+  const ref = await call<{ object: { sha: string } }>(opts.token, `${repo}/ref/heads/${CONTENT_BRANCH}`)
+  const head = await call<{ tree: { sha: string } }>(opts.token, `${repo}/commits/${ref.object.sha}`)
+  const tree = await call<{ sha: string }>(opts.token, `${repo}/trees`, {
+    method: 'POST',
+    body: JSON.stringify({
+      base_tree: head.tree.sha,
+      tree: opts.paths.map((path) => ({ path, mode: '100644', type: 'blob', sha: null })),
+    }),
+  })
+  const commit = await call<{ sha: string }>(opts.token, `${repo}/commits`, {
+    method: 'POST',
+    body: JSON.stringify({ message: opts.message, tree: tree.sha, parents: [ref.object.sha] }),
+  })
+  try {
+    await call(opts.token, `${repo}/refs/heads/${CONTENT_BRANCH}`, { method: 'PATCH', body: JSON.stringify({ sha: commit.sha, force: false }) })
+  } catch (e) {
+    if (e instanceof GitHubWriteError && e.kind === 'other' && /422/.test(e.message)) {
+      throw new GitHubWriteError('The Recipes repo changed while deleting. Nothing was deleted. Reload and try again.', 'conflict')
+    }
+    throw e
+  }
+  return { commitSha: commit.sha }
+}

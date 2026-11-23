@@ -470,6 +470,16 @@ export function bakeCounts(snap: Snapshot): Map<string, number> {
   return counts
 }
 
+/** Everything under recipes/<slug>/, split by kind. */
+export function recipeFiles(snap: Snapshot, slug: string) {
+  const all = [...snap.files.keys()].filter((p) => p.startsWith(`recipes/${slug}/`))
+  return {
+    all,
+    bakes: all.filter((p) => p.startsWith(`recipes/${slug}/bakes/`) && p.endsWith('.md')),
+    photos: all.filter((p) => p.startsWith(`recipes/${slug}/images/`)),
+  }
+}
+
 /** All bakes for a recipe, newest first. */
 export async function loadBakes(snap: Snapshot, recipe: string): Promise<Bake[]> {
   const bakes = await Promise.all(bakePaths(snap, recipe).map(async (p) => toBake(p, (await readText(snap, p)) ?? '')))

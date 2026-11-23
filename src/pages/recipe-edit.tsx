@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Calculator } from 'lucide-react'
+import { ArrowLeft, Calculator, Trash2 } from 'lucide-react'
+import { DeleteRecipeDialog } from '@/components/delete-recipe-dialog'
+import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { ContentError } from '@/components/content-error'
 import { EditGuard } from '@/components/editor/edit-guard'
@@ -114,6 +116,7 @@ function RecipeForm({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [dirty, setDirty] = useState(startDirty)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const slug = isNew ? slugify(r.title) : r.slug
   const path = `recipes/${slug}/recipe.md`
@@ -160,7 +163,15 @@ function RecipeForm({
       <Link to={isNew ? '/recipes' : `/recipes/${r.slug}`} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="size-4" /> {isNew ? 'Recipes' : r.title}
       </Link>
-      <h1 className="mb-8 text-3xl font-semibold">{isNew ? 'New recipe' : `Edit ${initial.title}`}</h1>
+      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <h1 className="text-3xl font-semibold">{isNew ? 'New recipe' : `Edit ${initial.title}`}</h1>
+        {!isNew && (
+          <Button variant="outline" onClick={() => setConfirmDelete(true)} className="text-destructive">
+            <Trash2 />
+            Delete recipe
+          </Button>
+        )}
+      </div>
       {note && (
         <p role="status" className="-mt-4 mb-6 flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
           <Calculator className="mt-0.5 size-4 shrink-0 text-primary" />
@@ -287,6 +298,10 @@ function RecipeForm({
           </CardContent>
         </Card>
       </div>
+
+      {!isNew && (
+        <DeleteRecipeDialog key={String(confirmDelete)} open={confirmDelete} onOpenChange={setConfirmDelete} recipe={initial} onDeleted={() => setDirty(false)} />
+      )}
 
       <SaveBar
         message={message}
