@@ -1,11 +1,14 @@
+import { useState } from 'react'
 import { Lock, LockOpen, LogOut, PencilLine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAuth } from '@/lib/auth-context'
 
 /** Header control. Hidden for visitors; shows lock state once a token is saved on this device. */
 export function AuthControl() {
   const { status, requestEdit, lock, signOut } = useAuth()
+  const [confirmSignOut, setConfirmSignOut] = useState(false)
   if (status === 'signed-out') return null
   if (status === 'locked') {
     return (
@@ -34,12 +37,53 @@ export function AuthControl() {
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label="Sign out and remove the saved token" onClick={signOut}>
+          <Button variant="ghost" size="icon" aria-label="Sign out and remove the saved token" onClick={() => setConfirmSignOut(true)}>
             <LogOut />
           </Button>
         </TooltipTrigger>
         <TooltipContent>Sign out on this device</TooltipContent>
       </Tooltip>
+
+      <Dialog open={confirmSignOut} onOpenChange={setConfirmSignOut}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-heading">Sign out on this device?</DialogTitle>
+            <DialogDescription>
+              This removes the saved token from this browser. To edit here again you'll need to paste a token, and GitHub only shows a
+              token once, when it's created.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Just want to hide the edit controls? Use <span className="font-medium text-foreground">Lock</span> instead. You'll only need
+            your passphrase to unlock.
+          </p>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setConfirmSignOut(false)
+                lock()
+              }}
+            >
+              <LockOpen />
+              Lock instead
+            </Button>
+            <DialogClose asChild>
+              <Button variant="ghost">Cancel</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setConfirmSignOut(false)
+                signOut()
+              }}
+            >
+              <LogOut />
+              Sign out
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
