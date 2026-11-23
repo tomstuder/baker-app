@@ -1,12 +1,14 @@
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, Calculator } from 'lucide-react'
 import { toast } from 'sonner'
 import { ContentError } from '@/components/content-error'
 import { EditGuard } from '@/components/editor/edit-guard'
 import { Field, ImageField, MarkdownField, TextField } from '@/components/editor/fields'
 import { IngredientEditor } from '@/components/editor/ingredient-editor'
 import { SaveBar } from '@/components/editor/save-bar'
+import type { FromCalculator } from '@/components/save-to-recipe'
+import { applyFormula } from '@/lib/formula-to-recipe'
 import { withKey } from '@/components/editor/sortable-utils'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -46,6 +48,8 @@ export function RecipeEditPage() {
 
 function RecipeEditLoader() {
   const { slug } = useParams()
+  // Arriving from the calculator's "Save to recipe": a draft for a new recipe, or a formula to apply.
+  const fromCalc = (useLocation().state ?? {}) as FromCalculator
   const isNew = !slug
   const { data, snap, error, loading } = useContent(`recipe-edit:${slug ?? 'new'}`, async (s) => {
     const [recipe, config] = await Promise.all([slug ? loadRecipe(s, slug) : Promise.resolve(blankRecipe()), loadConfig(s)])
@@ -55,28 +59,61 @@ function RecipeEditLoader() {
   if (loading) return <Skeleton className="h-96 w-full rounded-xl" />
   if (error) return <ContentError error={error} />
   if (!data?.recipe) return <p className="text-muted-foreground">Recipe not found.</p>
+  let initial = data.recipe
+  let note: string | undefined
+  let changedByCalc = false
+  if (!slug && fromCalc.draft) {
+    initial = { ...initial, title: fromCalc.draft.title, yield: fromCalc.draft.yield, ingredients: fromCalc.draft.ingredients }
+    note = 'Ingredients come from the calculator. Pick a category, add the method, then save.'
+    changedByCalc = true
+  } else if (slug && fromCalc.applyFormula) {
+    const applied = applyFormula(initial, fromCalc.applyFormula)
+    initial = { ...initial, ingredients: applied.ingredients }
+    changedByCalc = applied.changed > 0
+    note = applied.changed
+      ? `${applied.changed} ingredient change${applied.changed === 1 ? '' : 's'} from the calculator, at this recipe's batch size. Changed items lost their "amount as written". Review and save.`
+      : 'The calculator formula matches this recipe; nothing to change.'
+  }
   return (
     <RecipeForm
       key={slug ?? 'new'}
-      initial={data.recipe}
+      initial={initial}
       categories={data.categories}
       isNew={isNew}
       snap={snap}
       sha={snap && !isNew ? snap.files.get(data.recipe.path) : undefined}
+      note={note}
+      startDirty={changedByCalc}
     />
   )
 }
 
-function RecipeForm({ initial, categories, isNew, snap, sha }: { initial: Recipe; categories: string[]; isNew: boolean; snap?: Snapshot; sha?: string }) {
+function RecipeForm({
+  initial,
+  categories,
+  isNew,
+  snap,
+  sha,
+  note,
+  startDirty = false,
+}: {
+  initial: Recipe
+  categories: string[]
+  isNew: boolean
+  snap?: Snapshot
+  sha?: string
+  note?: string
+  startDirty?: boolean
+}) {
   const { token } = useAuth()
   const navigate = useNavigate()
   const [r, setR] = useState<Recipe>(() => ({ ...initial, ingredients: initial.ingredients.map((g) => withKey({ ...g, items: g.items.map(withKey) })) }))
   const [tagsText, setTagsText] = useState(initial.tags.join(', '))
   const [equipmentText, setEquipmentText] = useState(initial.equipment.join('\n'))
-  const [message, setMessage] = useState(isNew ? '' : `Update ${initial.title}`)
+  const [message, setMessage] = useState(isNew ? '' : note ? `Update ${initial.title} from the calculator` : `Update ${initial.title}`)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [dirty, setDirty] = useState(false)
+  const [dirty, setDirty] = useState(startDirty)
 
   const slug = isNew ? slugify(r.title) : r.slug
   const path = `recipes/${slug}/recipe.md`
@@ -124,6 +161,12 @@ function RecipeForm({ initial, categories, isNew, snap, sha }: { initial: Recipe
         <ArrowLeft className="size-4" /> {isNew ? 'Recipes' : r.title}
       </Link>
       <h1 className="mb-8 text-3xl font-semibold">{isNew ? 'New recipe' : `Edit ${initial.title}`}</h1>
+      {note && (
+        <p role="status" className="-mt-4 mb-6 flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+          <Calculator className="mt-0.5 size-4 shrink-0 text-primary" />
+          {note}
+        </p>
+      )}
 
       <div className="space-y-6">
         <Card>

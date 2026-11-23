@@ -1,6 +1,8 @@
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
-import { Check, Copy, Plus, RotateCcw, Trash2 } from 'lucide-react'
-import { useLocation } from 'react-router-dom'
+import { BookmarkPlus, Check, Copy, Plus, RotateCcw, Trash2 } from 'lucide-react'
+import { Link, useLocation } from 'react-router-dom'
+import { IfEditing } from '@/components/auth-control'
+import { SaveToRecipeDialog } from '@/components/save-to-recipe'
 import { PageHeader } from '@/components/page-header'
 import { NumberInput } from '@/components/number-input'
 import { Badge } from '@/components/ui/badge'
@@ -29,7 +31,7 @@ import {
 const STORAGE_KEY = 'calculator:v1'
 const DEFAULT_SCALE: Scale = { mode: 'pieces', count: 2, weight: 900 }
 
-type Saved = { formula: Formula; scale: Scale }
+type Saved = { formula: Formula; scale: Scale; /** Recipe slug the formula was opened from. */ source?: string }
 
 function load(): Saved {
   try {
@@ -47,18 +49,19 @@ function load(): Saved {
 export function CalculatorPage() {
   // A recipe page can open its formula here by passing { formula, scale } as router state.
   const incoming = useLocation().state as Partial<Saved> | null
-  const [{ formula, scale }, setState] = useState<Saved>(() =>
-    incoming?.formula?.flours && incoming?.scale?.mode ? { formula: incoming.formula, scale: incoming.scale } : load(),
+  const [{ formula, scale, source }, setState] = useState<Saved>(() =>
+    incoming?.formula?.flours && incoming?.scale?.mode ? { formula: incoming.formula, scale: incoming.scale, source: incoming.source } : load(),
   )
+  const [saveOpen, setSaveOpen] = useState(false)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ formula, scale }))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ formula, scale, source }))
     } catch {
       /* ignore */
     }
-  }, [formula, scale])
+  }, [formula, scale, source])
 
   const batch = useMemo(() => calculate(formula, scale), [formula, scale])
 
@@ -87,14 +90,20 @@ export function CalculatorPage() {
   return (
     <>
       <PageHeader title="Baker's percentage" description="Every ingredient as a percentage of the final-dough flour.">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <IfEditing>
+            <Button onClick={() => setSaveOpen(true)}>
+              <BookmarkPlus />
+              Save to recipe
+            </Button>
+          </IfEditing>
           <Button variant="outline" onClick={copy}>
             {copied ? <Check /> : <Copy />}
             {copied ? 'Copied' : 'Copy'}
           </Button>
           <Button
             variant="outline"
-            onClick={() => setState({ formula: countrySourdough(), scale: DEFAULT_SCALE })}
+            onClick={() => setState({ formula: countrySourdough(), scale: DEFAULT_SCALE, source: undefined })}
             title="Reset to the country sourdough example"
           >
             <RotateCcw />
@@ -114,6 +123,15 @@ export function CalculatorPage() {
               onChange={(e) => setFormula((f) => ({ ...f, name: e.target.value }))}
               className="max-w-sm"
             />
+            {source && (
+              <p className="text-xs text-muted-foreground">
+                Opened from{' '}
+                <Link to={`/recipes/${source}`} className="font-medium text-primary hover:underline">
+                  this recipe
+                </Link>
+                .
+              </p>
+            )}
           </div>
 
           <Card>
@@ -287,6 +305,7 @@ export function CalculatorPage() {
           </CardContent>
         </Card>
       </div>
+      <SaveToRecipeDialog key={String(saveOpen)} open={saveOpen} onOpenChange={setSaveOpen} formula={formula} scale={scale} source={source} />
     </>
   )
 }

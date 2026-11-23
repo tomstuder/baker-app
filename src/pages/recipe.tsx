@@ -160,7 +160,7 @@ export function RecipePage() {
                 )}
 
                 {formula && (
-                  <Button variant="outline" className="w-full" onClick={() => navigate('/calculator', { state: formula })}>
+                  <Button variant="outline" className="w-full" onClick={() => navigate('/calculator', { state: { ...formula, source: recipe.slug } })}>
                     <Calculator />
                     Scale in calculator
                   </Button>

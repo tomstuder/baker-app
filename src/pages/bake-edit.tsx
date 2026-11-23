@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { ArrowDown, ArrowLeft, ArrowUp, Plus, Star, Trash2 } from 'lucide-react'
@@ -8,6 +8,7 @@ import { ContentError } from '@/components/content-error'
 import { EditGuard } from '@/components/editor/edit-guard'
 import { MarkdownField, PhotosField, TextField } from '@/components/editor/fields'
 import { SaveBar } from '@/components/editor/save-bar'
+import type { FromCalculator } from '@/components/save-to-recipe'
 import { DragHandle, SortableRow } from '@/components/editor/sortable'
 import { useDragSensors, withKey } from '@/components/editor/sortable-utils'
 import { Button } from '@/components/ui/button'
@@ -55,9 +56,10 @@ export function BakeEditPage() {
 
 function BakeEditLoader() {
   const { slug = '', bake: bakeId } = useParams()
+  const prefill = ((useLocation().state ?? {}) as FromCalculator).prefill
   const { data, snap, error, loading } = useContent(`bake-edit:${slug}:${bakeId ?? 'new'}`, async (s) => {
     const recipe = await loadRecipe(s, slug)
-    const bake = recipe && bakeId ? await loadBake(s, slug, bakeId) : recipe ? blankBake(recipe) : null
+    const bake = recipe && bakeId ? await loadBake(s, slug, bakeId) : recipe ? { ...blankBake(recipe), ...(prefill && { batch: prefill.batch, changes: prefill.changes }) } : null
     return { recipe, bake }
   })
   if (loading) return <Skeleton className="h-96 w-full rounded-xl" />

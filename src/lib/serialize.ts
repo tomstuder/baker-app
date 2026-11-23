@@ -85,7 +85,7 @@ function toFile(
   tweak?.(doc)
   // Ingredient lines read best as `{ name: … }`; simple lists as `[a, b]`, matching the hand-written files.
   const yaml = doc.toString({ lineWidth: 0 }).replace(/^(\w+): \[ (.*) \]$/gm, '$1: [$2]')
-  return `---\n${yaml}---\n\n${body.replace(/^\s+/, '').replace(/\s*$/, '\n')}`
+  return body.trim() ? `---\n${yaml}---\n\n${body.replace(/^\s+/, '').replace(/\s*$/, '\n')}` : `---\n${yaml}---\n`
 }
 
 export function serializeRecipe(r: Recipe): string {
