@@ -93,3 +93,13 @@ export async function putFile(opts: {
   )
   return { commitSha: res.commit.sha, blobSha: res.content.sha, path: res.content.path }
 }
+
+/** Delete one file (one commit). `sha` must be the file's current blob sha. */
+export async function deleteFile(opts: { token: string; path: string; message: string; sha: string }): Promise<{ commitSha: string }> {
+  const res = await call<{ commit: { sha: string } }>(
+    opts.token,
+    `/repos/${CONTENT_REPO}/contents/${opts.path.split('/').map(encodeURIComponent).join('/')}`,
+    { method: 'DELETE', body: JSON.stringify({ message: opts.message, sha: opts.sha, branch: CONTENT_BRANCH }) },
+  )
+  return { commitSha: res.commit.sha }
+}

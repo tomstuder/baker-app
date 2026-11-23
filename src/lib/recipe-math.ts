@@ -70,7 +70,7 @@ export function recipeToFormula(r: Recipe): { formula: Formula; scale: Scale } |
   }
 }
 
-/** "350°F" → "350°F · 177°C"; "200C" → "392°F · 200°C". Anything else is returned unchanged. */
+/** "350°F" → "350°F · 177°C"; "200C" → "392°F · 200°C". Anything else is returned unchanged. Works for any temperature. */
 export function formatOven(oven: string | undefined): string | undefined {
   if (!oven) return undefined
   const m = oven.match(/(\d+(?:\.\d+)?)\s*°?\s*([FC])\b/i)
@@ -79,3 +79,5 @@ export function formatOven(oven: string | undefined): string | undefined {
   const [f, c] = m[2].toUpperCase() === 'F' ? [v, ((v - 32) * 5) / 9] : [(v * 9) / 5 + 32, v]
   return `${Math.round(f)}°F · ${Math.round(c)}°C`
 }
+
+export const formatTemp = formatOven

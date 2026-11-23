@@ -49,13 +49,18 @@ Deploy: every push to `main` runs `.github/workflows/deploy.yml`, which builds a
   - `/recipes` lists recipes with category filters (`?category=`, `?tag=`).
   - `/recipes/:slug` shows one recipe.
   - `/recipes/new`, `/recipes/:slug/edit` and `/edit/home` are the editors (wrapped in `EditGuard`).
+  - `/recipes/:slug/bakes/new` and `/recipes/:slug/bakes/:bake/edit` add and edit bakes (with delete).
   - The diary and references pages are still placeholders.
 - **Editing (built):**
   - Auth: `components/auth-provider.tsx` (sign-in and unlock dialogs) plus `lib/auth-context.ts` (`useAuth`: status `signed-out` | `locked` | `unlocked`). `lib/token-vault.ts` encrypts the token with AES-GCM using a PBKDF2 key from the passphrase; only the ciphertext is stored (`auth:vault:v1`), and the plain token lives in memory. Only fine-grained `github_pat_` tokens are accepted.
   - Visitors see no edit controls. `components/auth-control.tsx` has the header lock control, the footer "Owner sign-in" link and `<IfEditing>` for edit buttons.
   - Writes: `lib/github.ts` `putFile` makes one commit per file through the Contents API, sending the blob `sha` from the snapshot when updating, so GitHub rejects a stale save with 409 (shown as a "changed on GitHub" message). After a save: `cacheFile(blobSha, text)`, then `invalidateSnapshot()`. While unlocked, reads use the token (`setAuthToken`).
   - `lib/serialize.ts` writes files back in the hand-written style. Re-saving an unchanged recipe produces an identical file (keep it that way, so commits only show real edits). `pct` is recalculated from grams on every save.
-  - Photos: `ImageField` resizes in the browser (`lib/image.ts`, 2000 px JPEG) and uploads right away as its own commit to `recipes/<slug>/images/` or `images/home/`.
+- **Bake log (built):**
+  - One file per bake at `recipes/<slug>/bakes/<date>[-title][-n].md`. `toBake` and `serializeBake` handle date, title, rating 1–5, batch, changes[], temps {kitchen, dough, oven}, timeline[{time, step}] (written as one quoted line per step) and photos[] (paths relative to the bake file, e.g. `../images/x.jpg`).
+  - `newBakePath` avoids name clashes, `bakeCounts(snap)` counts bakes from the file list alone (shown on recipe cards), and `components/bake-log.tsx` renders the log on the recipe page.
+  - `deleteFile` in `lib/github.ts` removes a bake, which stays in git history.
+  - Photos: `ImageField` resizes in the browser (`lib/image.ts`, 2000 px JPEG) and uploads right away as its own commit to `recipes/<slug>/images/` or `images/home/`. `PhotosField` does the same for several photos. Stored paths are relative to the content file (`relativePath`).
 
 ## Planned design (agreed with the user; not built yet)
 
@@ -72,7 +77,7 @@ Deploy: every push to `main` runs `.github/workflows/deploy.yml`, which builds a
 - **Calculator scope:** multiple flours, ingredients as % of total flour, total hydration including water in milk, eggs and butter, preferments (levain, poolish, biga) with their own hydration, scaling by dough weight, loaf count or flour weight, and saving a formula into a recipe.
 - **Recipe log:** recipes plus individual bake entries (date, tweaks, temperatures, timings, rating, photos). Diary posts can link to recipes and bakes. Photos are resized in the browser and committed to the repo.
 - **Categories and tags** (user request): recipes, diary posts and reference notes each get one category plus any number of free-form tags, stored in each file's header block. Categories come from a short, editable list per section. The lists live in the content repo's `config.yml`. Recipes: Bread, Enriched bread, Quick breads & muffins, Pastry, Cakes & cookies, Pizza & flatbread, Pasta & noodles, Starters & preferments. Diary: Bake log, Experiment, Learning, Kitchen notes. References: Techniques, Glossary, Links & books, Conversions. List and search views filter by category and tag.
-- **Build order:** 1) shell and deploy (done), 2) calculator (done), 3) content layer, token login, recipe and home editors (done); next, bake log entries and saving from the calculator, 4) diary, then references and uploads.
+- **Build order:** 1) shell and deploy (done), 2) calculator (done), 3) content layer, token login, recipe and home editors, bake log (done); next, saving from the calculator, 4) diary (reading and editing), then references (reading and editing) and uploads.
 - **Units:** grams by default; temperatures in both °F and °C.
 
 ## Notes

@@ -2,8 +2,8 @@
  * Turn edited content back into files in the content repo's format (see that repo's README).
  * Output mirrors the hand-written style: block YAML, with tags and each ingredient on one line.
  */
-import { Document, isMap, isPair, isScalar, isSeq } from 'yaml'
-import type { Home, IngredientGroup, IngredientItem, Recipe } from '@/lib/content'
+import { Document, Scalar, isMap, isPair, isScalar, isSeq } from 'yaml'
+import type { Bake, Home, IngredientGroup, IngredientItem, Recipe } from '@/lib/content'
 
 export function slugify(text: string): string {
   return text
@@ -55,7 +55,13 @@ function itemObject(i: IngredientItem) {
   })
 }
 
-function toFile(data: Record<string, unknown>, body: string, flowPaths: (string | number)[][], comments: Record<string, string> = {}): string {
+function toFile(
+  data: Record<string, unknown>,
+  body: string,
+  flowPaths: (string | number)[][],
+  comments: Record<string, string> = {},
+  tweak?: (doc: Document) => void,
+): string {
   const doc = new Document(data)
   if (isMap(doc.contents)) {
     for (const pair of doc.contents.items) {
@@ -76,6 +82,7 @@ function toFile(data: Record<string, unknown>, body: string, flowPaths: (string 
       if (isSeq(items)) for (const item of items.items) if (isMap(item)) item.flow = true
     }
   }
+  tweak?.(doc)
   // Ingredient lines read best as `{ name: … }`; simple lists as `[a, b]`, matching the hand-written files.
   const yaml = doc.toString({ lineWidth: 0 }).replace(/^(\w+): \[ (.*) \]$/gm, '$1: [$2]')
   return `---\n${yaml}---\n\n${body.replace(/^\s+/, '').replace(/\s*$/, '\n')}`
@@ -117,4 +124,28 @@ export function serializeHome(h: Home): string {
     social: clean(h.social),
   })
   return toFile(data, h.body, [['featured']])
+}
+
+export function serializeBake(b: Bake): string {
+  const data = clean({
+    date: b.date,
+    title: b.title,
+    rating: b.rating,
+    batch: b.batch,
+    changes: b.changes.map((c) => c.trim()).filter(Boolean),
+    temps: clean({ kitchen: b.temps.kitchen, dough: b.temps.dough, oven: b.temps.oven }),
+    timeline: b.timeline.filter((t) => t.time.trim() || t.step.trim()).map((t) => clean({ time: t.time, step: t.step })),
+    photos: b.photos,
+  })
+  return toFile(data, b.body, [], {}, (doc) => {
+    // One line per step; always quote times so "08:00" can't be read as a number by YAML 1.1 tools.
+    const timeline = doc.get('timeline', true)
+    if (!isSeq(timeline)) return
+    for (const item of timeline.items) {
+      if (!isMap(item)) continue
+      item.flow = true
+      const time = item.get('time', true)
+      if (isScalar(time)) time.type = Scalar.QUOTE_DOUBLE
+    }
+  })
 }

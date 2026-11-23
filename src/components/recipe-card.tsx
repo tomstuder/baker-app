@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Wheat } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { assetUrl, type Recipe, type Snapshot } from '@/lib/content'
+import { assetUrl, bakeCounts, type Recipe, type Snapshot } from '@/lib/content'
 
 export function StatusBadge({ status }: { status: Recipe['status'] }) {
   if (status === 'tested') return null
@@ -10,6 +10,7 @@ export function StatusBadge({ status }: { status: Recipe['status'] }) {
 }
 
 export function RecipeCard({ recipe, snap }: { recipe: Recipe; snap?: Snapshot }) {
+  const baked = snap ? (bakeCounts(snap).get(recipe.slug) ?? 0) : 0
   const img = snap ? assetUrl(snap, recipe.path, recipe.image) : undefined
   return (
     <Link to={`/recipes/${recipe.slug}`} className="group block h-full rounded-xl focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
@@ -28,7 +29,9 @@ export function RecipeCard({ recipe, snap }: { recipe: Recipe; snap?: Snapshot }
             <h3 className="text-lg leading-snug font-semibold">{recipe.title}</h3>
             <StatusBadge status={recipe.status} />
           </div>
-          {recipe.category && <p className="text-sm text-muted-foreground">{recipe.category}</p>}
+          <p className="text-sm text-muted-foreground">
+            {[recipe.category, baked > 0 && `Baked ${baked}×`].filter(Boolean).join(' · ')}
+          </p>
         </CardContent>
       </Card>
     </Link>

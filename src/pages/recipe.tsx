@@ -11,13 +11,18 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useContent } from '@/hooks/use-content'
 import { formatGrams, formatPct } from '@/lib/bakers'
-import { assetUrl, githubFileUrl, loadRecipe, type Recipe } from '@/lib/content'
+import { BakeLog } from '@/components/bake-log'
+import { assetUrl, githubFileUrl, loadBakes, loadRecipe, type Recipe } from '@/lib/content'
 import { formatDate, stripLeadingTitle } from '@/lib/format'
 import { formatOven, itemPct, recipeStats, recipeToFormula } from '@/lib/recipe-math'
 
 export function RecipePage() {
   const { slug = '' } = useParams()
-  const { data: recipe, snap, error, loading } = useContent(`recipe:${slug}`, (s) => loadRecipe(s, slug))
+  const { data, snap, error, loading } = useContent(`recipe:${slug}`, async (s) => {
+    const [recipe, bakes] = await Promise.all([loadRecipe(s, slug), loadBakes(s, slug)])
+    return { recipe, bakes }
+  })
+  const recipe = data?.recipe
   const navigate = useNavigate()
 
   if (loading) {
@@ -193,6 +198,8 @@ export function RecipePage() {
           )}
         </div>
       </div>
+
+      <BakeLog recipe={recipe.slug} bakes={data?.bakes ?? []} snap={snap} />
 
       <footer className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-2 border-t pt-6 text-sm text-muted-foreground">
         {recipe.created && <span>Added {formatDate(recipe.created)}</span>}

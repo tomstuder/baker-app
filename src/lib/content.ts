@@ -140,6 +140,15 @@ export function resolvePath(fromFile: string, rel: string): string {
   return parts.join('/')
 }
 
+/** Path from a content file's folder to a repo path, e.g. (recipes/a/bakes/x.md, recipes/a/images/p.jpg) → ../images/p.jpg */
+export function relativePath(fromFile: string, repoPath: string): string {
+  const from = fromFile.split('/').slice(0, -1)
+  const to = repoPath.split('/')
+  let i = 0
+  while (i < from.length && i < to.length - 1 && from[i] === to[i]) i++
+  return [...Array(from.length - i).fill('..'), ...to.slice(i)].join('/')
+}
+
 /** Absolute URL for an image path written in a content file. */
 export function assetUrl(snap: Snapshot, fromFile: string, rel: string | undefined): string | undefined {
   if (!rel) return undefined
@@ -240,6 +249,24 @@ export type Home = {
   portrait?: string
   featured: string[]
   social: { instagram?: string; linkedin?: string; facebook?: string }
+  body: string
+}
+
+export type Bake = {
+  /** File name without .md, e.g. 2026-11-23 or 2026-11-23-higher-hydration. */
+  id: string
+  path: string
+  recipe: string
+  date: string
+  title?: string
+  /** 1–5 */
+  rating?: number
+  batch?: string
+  changes: string[]
+  temps: { kitchen?: string; dough?: string; oven?: string }
+  timeline: { time: string; step: string }[]
+  /** Paths relative to the bake file, e.g. ../images/2026-11-23-crumb.jpg */
+  photos: string[]
   body: string
 }
 
@@ -351,6 +378,47 @@ export function toHome(text: string): Home {
   }
 }
 
+export function toBake(path: string, text: string): Bake {
+  const { data: d, body } = parseDoc(text)
+  const [, recipe, , file] = path.split('/')
+  const id = file.replace(/\.md$/, '')
+  const temps = (d.temps && typeof d.temps === 'object' ? d.temps : {}) as Record<string, unknown>
+  const rating = num(d.rating)
+  return {
+    id,
+    path,
+    recipe,
+    date: str(d.date) ?? id.match(/^\d{4}-\d{2}-\d{2}/)?.[0] ?? '',
+    title: str(d.title),
+    rating: rating !== undefined ? Math.min(5, Math.max(1, Math.round(rating))) : undefined,
+    batch: str(d.batch),
+    changes: strList(d.changes),
+    temps: { kitchen: str(temps.kitchen), dough: str(temps.dough), oven: str(temps.oven) },
+    timeline: (Array.isArray(d.timeline) ? d.timeline : [])
+      .map((t) => {
+        const o = (t && typeof t === 'object' ? t : {}) as Record<string, unknown>
+        return { time: str(o.time) ?? '', step: str(o.step) ?? '' }
+      })
+      .filter((t) => t.time || t.step),
+    photos: strList(d.photos),
+    body,
+  }
+}
+
+/** Repo path for a new bake, avoiding names already taken. */
+export function newBakePath(snap: Snapshot | undefined, recipe: string, date: string, title?: string): string {
+  const slug = (title ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
+    .replace(/-+$/, '')
+  const base = `recipes/${recipe}/bakes/${date}${slug ? `-${slug}` : ''}`
+  let path = `${base}.md`
+  for (let n = 2; snap?.files.has(path); n++) path = `${base}-${n}.md`
+  return path
+}
+
 // ---------- loaders ----------
 
 const RECIPE_PATH = /^recipes\/[^/]+\/recipe\.md$/
@@ -366,6 +434,31 @@ export async function loadRecipe(snap: Snapshot, slug: string): Promise<Recipe |
   const path = `recipes/${slug}/recipe.md`
   const text = await readText(snap, path)
   return text === null ? null : toRecipe(path, text)
+}
+
+const bakePaths = (snap: Snapshot, recipe: string) =>
+  [...snap.files.keys()].filter((p) => p.startsWith(`recipes/${recipe}/bakes/`) && /^[^/]+\.md$/.test(p.slice(`recipes/${recipe}/bakes/`.length)))
+
+/** Number of bakes logged for each recipe, from the file list alone (no downloads). */
+export function bakeCounts(snap: Snapshot): Map<string, number> {
+  const counts = new Map<string, number>()
+  for (const p of snap.files.keys()) {
+    const m = p.match(/^recipes\/([^/]+)\/bakes\/[^/]+\.md$/)
+    if (m) counts.set(m[1], (counts.get(m[1]) ?? 0) + 1)
+  }
+  return counts
+}
+
+/** All bakes for a recipe, newest first. */
+export async function loadBakes(snap: Snapshot, recipe: string): Promise<Bake[]> {
+  const bakes = await Promise.all(bakePaths(snap, recipe).map(async (p) => toBake(p, (await readText(snap, p)) ?? '')))
+  return bakes.sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))
+}
+
+export async function loadBake(snap: Snapshot, recipe: string, id: string): Promise<Bake | null> {
+  const path = `recipes/${recipe}/bakes/${id}.md`
+  const text = await readText(snap, path)
+  return text === null ? null : toBake(path, text)
 }
 
 export async function loadDiary(snap: Snapshot): Promise<DiaryPost[]> {
