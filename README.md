@@ -62,13 +62,15 @@ fails to show. Fix it and push again; every earlier version stays in git history
 
 ### Categories and tags
 
-- **Categories** for recipes, the diary and references are listed in `Recipes/config.yml`. Add,
-  rename or reorder lines there; the order is the order of the filters and recipe sections. A
-  category used in a file but missing from the list still shows, after the listed ones, but only
-  listed categories appear in the editors' dropdowns. Renaming a category doesn't change files
-  that already use the old name.
+- **Categories** for recipes and the diary: when signed in, click **Categories** on the Recipes or
+  Diary page. Add, rename, drag to reorder or remove them; the order is the order of the filters
+  and recipe sections. **Renaming updates every recipe or post that uses the category**, and a
+  removed category's items can be moved to another one, all in one commit. Categories used in
+  files but missing from the list are offered for adding.
+- They're stored in `Recipes/config.yml`, which you can also edit by hand. Editing by hand
+  doesn't update the files that use a renamed category, and a category missing from the list still
+  shows, after the listed ones.
 - **Tags** need no setup: type any tag on a recipe or post and it appears in the filters.
-- `config.yml` can't be edited in the app yet; use GitHub or the desktop.
 
 ### Creating the token
 

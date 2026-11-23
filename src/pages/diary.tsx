@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom'
-import { NotebookPen, Plus, X } from 'lucide-react'
+import { NotebookPen, Plus, Tags, X } from 'lucide-react'
 import { IfEditing } from '@/components/auth-control'
 import { ContentError } from '@/components/content-error'
 import { Chip } from '@/components/filter-chip'
@@ -37,12 +37,20 @@ export function DiaryPage() {
     <>
       <PageHeader title="Diary" description="Notes from the kitchen: what I baked, tried and learned.">
         <IfEditing>
-          <Button asChild>
-            <Link to="/diary/new">
-              <Plus />
-              New post
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" asChild>
+              <Link to="/edit/categories?from=diary">
+                <Tags />
+                Categories
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link to="/diary/new">
+                <Plus />
+                New post
+              </Link>
+            </Button>
+          </div>
         </IfEditing>
       </PageHeader>
 

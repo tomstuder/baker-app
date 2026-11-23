@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { deletePaths, putFile } from './github'
+import { commitFiles, deletePaths, putFile } from './github'
 
 type Call = { method: string; url: string; body?: unknown; auth?: string }
 
@@ -53,6 +53,44 @@ describe('deletePaths', () => {
 
   it('refuses an empty delete', async () => {
     await expect(deletePaths({ token: 't', paths: [], message: 'm' })).rejects.toThrow('Nothing to delete')
+  })
+})
+
+describe('commitFiles', () => {
+  const ok = {
+    [`GET ${G}/ref/heads/main`]: { json: { object: { sha: 'head1' } } },
+    [`GET ${G}/commits/head1`]: { json: { tree: { sha: 'tree1' } } },
+    [`POST ${G}/trees`]: { status: 201, json: { sha: 'tree2' } },
+    [`POST ${G}/commits`]: { status: 201, json: { sha: 'commit2' } },
+    [`PATCH ${G}/refs/heads/main`]: { json: {} },
+  }
+
+  it('writes and deletes files in one commit', async () => {
+    const calls = mockFetch(ok)
+    const res = await commitFiles({
+      token: 't',
+      message: 'Rename category',
+      expectedHead: 'head1',
+      changes: [
+        { path: 'config.yml', content: 'categories: {}\n' },
+        { path: 'old.md', content: null },
+      ],
+    })
+    expect(res.commitSha).toBe('commit2')
+    expect(calls[2].body).toEqual({
+      base_tree: 'tree1',
+      tree: [
+        { path: 'config.yml', mode: '100644', type: 'blob', content: 'categories: {}\n' },
+        { path: 'old.md', mode: '100644', type: 'blob', sha: null },
+      ],
+    })
+    expect(calls[4].body).toEqual({ sha: 'commit2', force: false })
+  })
+
+  it('refuses before writing anything if the repo moved past the expected commit', async () => {
+    const calls = mockFetch(ok)
+    await expect(commitFiles({ token: 't', message: 'm', expectedHead: 'older', changes: [{ path: 'x', content: 'y' }] })).rejects.toMatchObject({ kind: 'conflict' })
+    expect(calls.map((c) => c.method)).toEqual(['GET'])
   })
 })
 

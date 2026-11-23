@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom'
-import { Plus, X } from 'lucide-react'
+import { Plus, Tags, X } from 'lucide-react'
 import { IfEditing } from '@/components/auth-control'
 import { ContentError } from '@/components/content-error'
 import { Chip } from '@/components/filter-chip'
@@ -44,12 +44,20 @@ export function RecipesPage() {
     <>
       <PageHeader title="Recipes" description="Formulas, method and the history of every bake.">
         <IfEditing>
-          <Button asChild>
-            <Link to="/recipes/new">
-              <Plus />
-              New recipe
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" asChild>
+              <Link to="/edit/categories?from=recipes">
+                <Tags />
+                Categories
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link to="/recipes/new">
+                <Plus />
+                New recipe
+              </Link>
+            </Button>
+          </div>
         </IfEditing>
       </PageHeader>
 

@@ -37,7 +37,7 @@ Deploy: pushing to `main` runs `.github/workflows/deploy.yml` (Pages `build_type
 - `/recipes`, `/recipes/:slug`, `/recipes/new`, `/recipes/:slug/edit`, `/recipes/:slug/bakes/new`, `/recipes/:slug/bakes/:bake/edit`
 - `/diary`, `/diary/:slug`, `/diary/new`, `/diary/:slug/edit`
 - `/references?tab=converter|techniques|glossary|library`, `/references/techniques/:slug` (plus `/new` and `/:slug/edit`), `/references/edit/glossary|library|conversions`
-- `/edit/home`
+- `/edit/home`, `/edit/categories?from=recipes|diary`
 
 **Reading content** (`lib/content.ts`):
 - `getSnapshot()` makes 2 GitHub API calls (`branches/main`, then the recursive `git/trees`) and caches the result 5 minutes in sessionStorage. Visitors without a token get only 60 API calls an hour, so never add per-file API reads.
@@ -56,7 +56,8 @@ Deploy: pushing to `main` runs `.github/workflows/deploy.yml` (Pages `build_type
 - `lib/github.ts`:
   - `putFile` is one commit per file through the Contents API. Always pass the snapshot's blob `sha` when updating; GitHub then rejects stale saves with a 409, which maps to a `conflict` error.
   - `deleteFile` deletes one file.
-  - `deletePaths` deletes many files in ONE commit via the Git Data API (ref → commit → tree with `sha: null` → commit → PATCH ref `force: false`). It's used for deleting a whole recipe folder.
+  - `commitFiles` writes and/or deletes many files in ONE commit via the Git Data API (ref → commit → tree → commit → PATCH ref `force: false`). Pass `expectedHead: snap.commit` so it refuses if the repo moved since the content was read. `deletePaths` wraps it (deleting a recipe folder).
+- `lib/categories.ts` + `pages/categories-edit.tsx`: category editing. `serializeConfig` rewrites only the changed lists in `config.yml`; `setCategory` swaps only the header's `category:` line, so renames touch nothing else in a file.
 - After every save: `cacheFile(blobSha, text)`, then `invalidateSnapshot()`, then navigate. While unlocked, `setAuthToken` makes snapshot reads authenticated.
 - `lib/serialize.ts` (`serializeRecipe`/`Home`/`Bake`/`Diary`) and `lib/references.ts` (`serializeGlossary`/`Library`/`Conversions`/`Technique`) write files in the hand-written style:
   - Block YAML, with `[a, b]` tag lists.
