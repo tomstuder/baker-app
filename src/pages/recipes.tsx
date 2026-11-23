@@ -1,5 +1,6 @@
-import { useSearchParams } from 'react-router-dom'
-import { X } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Plus, X } from 'lucide-react'
+import { IfEditing } from '@/components/auth-control'
 import { ContentError } from '@/components/content-error'
 import { PageHeader } from '@/components/page-header'
 import { RecipeCard } from '@/components/recipe-card'
@@ -41,7 +42,16 @@ export function RecipesPage() {
 
   return (
     <>
-      <PageHeader title="Recipes" description="Formulas, method and the history of every bake." />
+      <PageHeader title="Recipes" description="Formulas, method and the history of every bake.">
+        <IfEditing>
+          <Button asChild>
+            <Link to="/recipes/new">
+              <Plus />
+              New recipe
+            </Link>
+          </Button>
+        </IfEditing>
+      </PageHeader>
 
       {error && <ContentError error={error} />}
 

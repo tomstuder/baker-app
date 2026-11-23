@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { AuthControl, OwnerSignIn } from '@/components/auth-control'
 import { SocialLinks } from '@/components/social-links'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { useContent } from '@/hooks/use-content'
@@ -61,7 +62,8 @@ export function Layout() {
             ))}
           </nav>
 
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center">
+            <AuthControl />
             <ThemeToggle />
           </div>
         </div>
@@ -77,7 +79,8 @@ export function Layout() {
             © {YEAR} {home.name} · Recipes are kept in{' '}
             <a href="https://github.com/tomstuder/Recipes" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">
               git
-            </a>
+            </a>{' '}
+            · <OwnerSignIn />
           </p>
           <SocialLinks social={home.social} size="sm" />
         </div>

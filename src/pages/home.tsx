@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, BookOpen, Calculator, NotebookPen, Wheat } from 'lucide-react'
+import { ArrowRight, BookOpen, Calculator, NotebookPen, Pencil, Wheat } from 'lucide-react'
+import { IfEditing } from '@/components/auth-control'
 import { ContentError } from '@/components/content-error'
 import { Markdown } from '@/components/markdown'
 import { RecipeCard } from '@/components/recipe-card'
@@ -38,7 +39,17 @@ export function HomePage() {
       {/* Bio */}
       <section className="grid items-center gap-10 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         <div className="order-2 md:order-1">
-          <p className="text-sm font-medium tracking-wide text-primary uppercase">Bake Book</p>
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm font-medium tracking-wide text-primary uppercase">Bake Book</p>
+            <IfEditing>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/edit/home">
+                  <Pencil />
+                  Edit home page
+                </Link>
+              </Button>
+            </IfEditing>
+          </div>
           <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">{home.name}</h1>
           {home.tagline && <p className="mt-3 text-lg text-muted-foreground">{home.tagline}</p>}
 

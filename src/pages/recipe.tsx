@@ -1,5 +1,6 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Calculator, Clock, ExternalLink, History, Thermometer, Users, UtensilsCrossed } from 'lucide-react'
+import { ArrowLeft, Calculator, Clock, ExternalLink, History, Pencil, Thermometer, Users, UtensilsCrossed } from 'lucide-react'
+import { IfEditing } from '@/components/auth-control'
 import { ContentError } from '@/components/content-error'
 import { Markdown } from '@/components/markdown'
 import { StatusBadge } from '@/components/recipe-card'
@@ -61,7 +62,17 @@ export function RecipePage() {
           )}
           <StatusBadge status={recipe.status} />
         </div>
-        <h1 className="text-4xl font-semibold">{recipe.title}</h1>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <h1 className="text-4xl font-semibold">{recipe.title}</h1>
+          <IfEditing>
+            <Button asChild variant="outline">
+              <Link to={`/recipes/${recipe.slug}/edit`}>
+                <Pencil />
+                Edit
+              </Link>
+            </Button>
+          </IfEditing>
+        </div>
         {recipe.tags.length > 0 && (
           <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-sm">
             {recipe.tags.map((t) => (

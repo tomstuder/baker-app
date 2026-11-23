@@ -44,10 +44,18 @@ function storageSet(store: Storage | undefined, key: string, value: string) {
 const session = () => (typeof sessionStorage === 'undefined' ? undefined : sessionStorage)
 const local = () => (typeof localStorage === 'undefined' ? undefined : localStorage)
 
+// Set while the owner is signed in, so reads use their 5,000/hour limit and see edits right away.
+let authToken: string | null = null
+export function setAuthToken(token: string | null) {
+  authToken = token
+}
+
 async function githubApi<T>(path: string): Promise<T> {
   let res: Response
   try {
-    res = await fetch(`https://api.github.com${path}`, { headers: { Accept: 'application/vnd.github+json' } })
+    res = await fetch(`https://api.github.com${path}`, {
+      headers: { Accept: 'application/vnd.github+json', ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) },
+    })
   } catch {
     throw new ContentError("Couldn't reach GitHub. Check your connection and try again.", 'network')
   }
@@ -91,9 +99,29 @@ async function loadSnapshot(): Promise<Snapshot> {
   return { commit: branch.commit.sha, files: new Map(files) }
 }
 
+/** Forget the cached file list, e.g. after saving, so the next read sees the new commit. */
+export function invalidateSnapshot() {
+  snapshotPromise = null
+  try {
+    sessionStorage.removeItem(SNAPSHOT_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Seed the file cache with text we just wrote, so reading it back doesn't wait on the CDN. */
+export function cacheFile(blobSha: string, text: string) {
+  storageSet(local(), `blob:${blobSha}`, text)
+}
+
 /** URL of a file at the snapshot's commit (works for images too). */
 export function rawUrl(snap: Snapshot, path: string): string {
-  return `https://raw.githubusercontent.com/${CONTENT_REPO}/${snap.commit}/${path.split('/').map(encodeURIComponent).join('/')}`
+  return rawUrlAt(snap.commit, path)
+}
+
+/** URL of a file at a specific commit, e.g. one just created by an upload. */
+export function rawUrlAt(commit: string, path: string): string {
+  return `https://raw.githubusercontent.com/${CONTENT_REPO}/${commit}/${path.split('/').map(encodeURIComponent).join('/')}`
 }
 
 /** Link to a file's page on GitHub, e.g. for "view history". */
