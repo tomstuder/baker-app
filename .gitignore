@@ -25,3 +25,14 @@ dist-ssr
 
 # Claude Code personal memory (not shared)
 CLAUDE.local.md
+
+# Test coverage reports (vitest --coverage)
+coverage
+
+# Environment files, in case secrets are ever added (none are used today)
+.env
+.env.*
+!.env.example
+
+# Claude Code personal settings
+.claude/settings.local.json

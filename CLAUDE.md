@@ -4,96 +4,86 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-"Bake Book": a personal baking web app with four sections: a baker's percentage calculator, a recipe log with a history of individual bakes, a diary, and references. It's a static site on GitHub Pages at https://tomstuder.github.io/baker-app/ (repo `tomstuder/baker-app`, public).
+"Bake Book": a personal baking web app (calculator, recipes with bake logs, diary, references, bio home page). It's a static React site on GitHub Pages at https://tomstuder.github.io/baker-app/. There are **two repos**:
+
+- **`tomstuder/baker-app`** (this repo): app code only. Pushing to `main` deploys.
+- **`tomstuder/Recipes`**: all content, i.e. the "database". **Its README is the spec for every file format.** The app reads it live and writes to it through the GitHub API, so content changes need no deploy.
 
 ## Commands
 
 ```sh
-npm run dev       # dev server at http://localhost:5173/baker-app/ (note the /baker-app/ base path)
-npm run build     # tsc -b type-check, then vite build into dist/
-npm run lint      # oxlint
-npm test          # vitest run (all tests)
+npm run dev       # http://localhost:5173/baker-app/ (the /baker-app/ base path is required); reads live Recipes
+npm test          # vitest run
 npx vitest run src/lib/bakers.test.ts      # one file
-npx vitest run -t "overall hydration"      # tests whose name matches
-npx shadcn@latest add <component>   # add shadcn/ui components into src/components/ui/
+npx vitest run -t "overall hydration"      # by test name
+npm run lint      # oxlint (warnings in src/components/ui/ are shadcn's and expected)
+npm run build     # tsc -b, then vite build into dist/
+npx shadcn@latest add <component>
 ```
 
-Deploy: every push to `main` runs `.github/workflows/deploy.yml`, which builds and publishes `dist/` to Pages (Pages `build_type` is `workflow`, not branch-based). Check a run with `gh run list` or `gh run watch`.
+Deploy: pushing to `main` runs `.github/workflows/deploy.yml` (Pages `build_type` is `workflow`). Check with `gh run list` or `gh run watch`.
 
 ## Architecture
 
-- **Stack:** Vite + React 19 + TypeScript, Tailwind v4 through `@tailwindcss/vite` (there's no tailwind.config; the theme lives in `src/index.css`), and shadcn/ui with the `radix-nova` style and lucide icons. The `@/` alias points to `src/` and is defined in both `vite.config.ts` and the tsconfigs.
-- **GitHub Pages constraints:**
-  - `base: '/baker-app/'` in `vite.config.ts` must match the repo name.
-  - Routing uses `HashRouter` (in `src/main.tsx`) because Pages can't rewrite deep links. Keep it unless hosting changes.
-- **Routing and navigation:** routes are in `src/App.tsx`, all nested under `components/layout.tsx`, which provides the header, mobile `Sheet` menu and `<Outlet/>`. Menu entries come from `src/lib/nav.ts`, which drives both the header and the home-page cards, so a new section needs a route in `App.tsx` and an entry in `nav.ts`.
-- **Theme:**
-  - Colors are shadcn CSS variables, overridden in `src/index.css` with a warm palette.
-  - Dark mode is the `.dark` class on `<html>`, toggled by `components/theme-toggle.tsx`. It saves the choice in localStorage and falls back to the system setting.
-  - Headings use Fraunces (`font-heading`, applied to h1–h3 in the base layer); body text uses Geist.
+**Stack:** Vite + React 19 + TypeScript, Tailwind v4 via `@tailwindcss/vite` (the theme lives in `src/index.css`; there's no tailwind.config), shadcn/ui `radix-nova` + lucide, `yaml`, `react-markdown` + `remark-gfm`, `@dnd-kit`, `sonner`. The `@/` alias points to `src/` (vite.config.ts + tsconfigs).
 
-- **Calculator** (built):
-  - All the math lives in `src/lib/bakers.ts` as pure functions; `pages/calculator.tsx` is only UI.
-  - Convention: every % is relative to the *final-dough* flour (the 100% base). Preferments are added whole as a % of that flour and carry their own flour and water, set by their hydration. "Overall" figures (total flour, hydration, prefermented flour) include preferment flour and water, plus the water inside ingredients (`waterPct`, e.g. milk 87).
-  - The country sourdough example (`countrySourdough()`) is the main test case in `bakers.test.ts`: 90/10 flour, 75% water, 20% levain at 100%, 2% salt, which gives 77.27% overall hydration.
-  - The working formula is saved to localStorage under `calculator:v1`.
-  - `components/number-input.tsx` keeps the typed text separately from the number, so a blank field becomes NaN, which the math treats as 0.
+**GitHub Pages constraints:**
+- `base: '/baker-app/'` in `vite.config.ts` must match the repo name (use `'/'` with a custom domain).
+- `HashRouter` (`src/main.tsx`), because Pages can't rewrite deep links.
 
-- **Content layer (read-only, built):**
-  - `src/lib/content.ts` loads the content repo (snapshot, `readText`, `parseDoc`) and turns files into typed objects (`toRecipe`, `toDiaryPost`, `toHome`, `loadConfig`).
-  - `src/hooks/use-content.ts` gives pages `{ data, snap, error, loading }` keyed by a string.
-  - `src/lib/recipe-math.ts` connects recipes to the calculator: `recipeStats`, `recipeToFormula` (opened via router state `navigate('/calculator', { state })`) and `formatOven`.
-  - `components/markdown.tsx` renders recipe and post bodies, resolving relative image paths to the content repo. It must never enable raw HTML.
-- **Pages:**
-  - `/` is the bio home page, driven by `home.md` in the content repo (name, tagline, `hero` and `portrait` photo paths, `featured` recipe slugs, `social` links). `DEFAULT_HOME` is the fallback.
-  - `/recipes` lists recipes with category filters (`?category=`, `?tag=`).
-  - `/recipes/:slug` shows one recipe.
-  - `/recipes/new`, `/recipes/:slug/edit` and `/edit/home` are the editors (wrapped in `EditGuard`).
-  - `/recipes/:slug/bakes/new` and `/recipes/:slug/bakes/:bake/edit` add and edit bakes (with delete).
-  - `/diary` lists posts with category and tag filters, `/diary/:slug` shows a post (cover, Markdown, related recipe and bake cards, older/newer links), and `/diary/new` and `/diary/:slug/edit` are the editors (with delete).
-  - `/references` has tabs in `?tab=`: converter (default), techniques, glossary, library. `/references/techniques/:slug` shows a technique. Editors: `/references/techniques/new`, `/references/techniques/:slug/edit` and `/references/edit/:list` (glossary | library | conversions).
-- **Editing (built):**
-  - Auth: `components/auth-provider.tsx` (sign-in and unlock dialogs) plus `lib/auth-context.ts` (`useAuth`: status `signed-out` | `locked` | `unlocked`). `lib/token-vault.ts` encrypts the token with AES-GCM using a PBKDF2 key from the passphrase; only the ciphertext is stored (`auth:vault:v1`), and the plain token lives in memory. Only fine-grained `github_pat_` tokens are accepted.
-  - Visitors see no edit controls. `components/auth-control.tsx` has the header lock control, the footer "Owner sign-in" link and `<IfEditing>` for edit buttons.
-  - Writes: `lib/github.ts` `putFile` makes one commit per file through the Contents API, sending the blob `sha` from the snapshot when updating, so GitHub rejects a stale save with 409 (shown as a "changed on GitHub" message). After a save: `cacheFile(blobSha, text)`, then `invalidateSnapshot()`. While unlocked, reads use the token (`setAuthToken`).
-  - `lib/serialize.ts` writes files back in the hand-written style. Re-saving an unchanged recipe produces an identical file (keep it that way, so commits only show real edits). `pct` is recalculated from grams on every save.
-- **Bake log (built):**
-  - One file per bake at `recipes/<slug>/bakes/<date>[-title][-n].md`. `toBake` and `serializeBake` handle date, title, rating 1–5, batch, changes[], temps {kitchen, dough, oven}, timeline[{time, step}] (written as one quoted line per step) and photos[] (paths relative to the bake file, e.g. `../images/x.jpg`).
-  - `newBakePath` avoids name clashes, `bakeCounts(snap)` counts bakes from the file list alone (shown on recipe cards), and `components/bake-log.tsx` renders the log on the recipe page.
-  - `deleteFile` in `lib/github.ts` removes a bake, which stays in git history.
-- **Diary (built):**
-  - Files are `diary/<date>-<slug>.md` (`newDiaryPath` avoids clashes) with title, date, category, tags, image (cover) and `related` refs: `recipe-slug` or `recipe-slug/bake-id`, resolved by `lib/related.ts`. `serializeDiary` writes them.
-  - Bake links go to `/recipes/<slug>?bake=<id>`; `BakeLog` scrolls to that card and highlights it.
-  - `MarkdownField` has an optional `photoFolder` that adds "Insert photo" (upload, then `![](rel)` at the cursor). The preview uses `Markdown`'s `imageUrls` for photos uploaded but not yet in the snapshot. It's enabled for diary, recipe and bake text.
-- **References (built):** `lib/references.ts` parses and serializes `references/glossary.yml` (A–Z on save), `library.yml` (types website/video/book/article/file; file paths relative to `references/`, uploaded raw to `references/files/`, max 25 MB), `conversions.yml` (one flow line per row) and `techniques/*.md`. It also has the converter math: `volumeToGrams`, `fToC`/`cToF`, `convertYeast` (instant 1 : active dry 1.25 : fresh 3) and `GRAMS_PER_OUNCE`. GitHub serves raw PDFs as downloads, so library files link to the GitHub viewer (`githubFileUrl`) and offer a raw download.
-- **Save to recipe (built):** "Scale in calculator" passes `{ formula, scale, source: slug }` as router state; the calculator remembers `source` in `calculator:v1`. `components/save-to-recipe.tsx` (signed-in only) offers three options, each opening an editor with `FromCalculator` router state so nothing is committed without review:
-  - Log a bake: `prefill` with `batchLabel` and `describeChanges`.
-  - Update a recipe: `applyFormula`, which works at the recipe's own flour weight, matches by name, drops "amount as written" on changed items and ignores ±0.05% calculator rounding.
-  - New recipe: `draft` from `formulaToIngredients`, at the batch size.
-  The logic lives in `lib/formula-to-recipe.ts`.
-- **Deleting a recipe (built):** "Delete recipe" in the recipe editor (`components/delete-recipe-dialog.tsx`) removes everything under `recipes/<slug>/` (recipe, bakes, images; `recipeFiles`) in ONE commit via `deletePaths` in `lib/github.ts` (Git Data API: ref → commit → tree with `sha: null` entries → commit → PATCH ref with `force: false`, so a moved branch means nothing is deleted). The dialog lists diary posts and home features that link to it, and if bakes exist, the title must be typed to confirm.
-- **Reordering:** ingredient rows (within and between groups) and bake timeline steps can be dragged with `@dnd-kit` (`components/editor/sortable.tsx`: `SortableRow` and `DragHandle`; helpers in `sortable-utils.ts`). Rows carry an editor-only `key` (`withKey`) that the serializers never write. ↑ ↓ buttons remain as a fallback.
-- **Code splitting:** the editor pages are `lazy()` routes in `App.tsx`, so visitors never download dnd-kit or the editors.
-  - Photos: `ImageField` resizes in the browser (`lib/image.ts`, 2000 px JPEG) and uploads right away as its own commit to `recipes/<slug>/images/` or `images/home/`. `PhotosField` does the same for several photos. Stored paths are relative to the content file (`relativePath`).
+**Routing:** `src/App.tsx`. Every route is nested in `components/layout.tsx` (header, mobile Sheet menu, footer with social links and "Owner sign-in"). Menu entries come from `lib/nav.ts`. Editor pages are `lazy()` routes, so visitors never download dnd-kit or the editors. Routes:
+- `/` home
+- `/calculator`
+- `/recipes`, `/recipes/:slug`, `/recipes/new`, `/recipes/:slug/edit`, `/recipes/:slug/bakes/new`, `/recipes/:slug/bakes/:bake/edit`
+- `/diary`, `/diary/:slug`, `/diary/new`, `/diary/:slug/edit`
+- `/references?tab=converter|techniques|glossary|library`, `/references/techniques/:slug` (plus `/new` and `/:slug/edit`), `/references/edit/glossary|library|conversions`
+- `/edit/home`
 
-## Planned design (agreed with the user; not built yet)
+**Reading content** (`lib/content.ts`):
+- `getSnapshot()` makes 2 GitHub API calls (`branches/main`, then the recursive `git/trees`) and caches the result 5 minutes in sessionStorage. Visitors without a token get only 60 API calls an hour, so never add per-file API reads.
+- Files come from `raw.githubusercontent.com/<repo>/<commitSha>/<path>` and are cached in localStorage by blob SHA.
+- `parseDoc` splits the YAML header from the Markdown body.
+- Typed loaders: `loadRecipes`/`loadRecipe`, `loadBakes`/`loadBake`, `bakeCounts` (from the file list alone), `loadDiary`/`loadDiaryPost`, `loadHome`, `loadConfig` (category lists). `lib/references.ts` loads the glossary, library, conversions and techniques; `lib/related.ts` resolves diary `related` refs.
+- `hooks/use-content.ts` gives pages `{ data, snap, error, loading }`, keyed by a string.
+- Paths inside content files are relative to that file: `resolvePath` and `relativePath` convert, and `assetUrl` turns them into raw URLs. Photos live in `images/` next to the content (`recipes/<slug>/images/`, `diary/images/`, `references/techniques/images/`, `images/home/`); bake photos are `../images/…`.
 
-- **Git is the database, in a separate content repo: `tomstuder/Recipes`** (public, CC0). This repo is only the app code. There's no backend or hosted DB:
-  - Layout: `config.yml` (category lists per section), `recipes/<slug>/recipe.md`, `recipes/<slug>/bakes/<date>.md`, `recipes/<slug>/images/`, `diary/<date>-<slug>.md`, `references/techniques/<slug>.md` (plus links, glossary, conversions and files to come).
-  - **The file format is documented in the Recipes repo's README, which is the spec.** Each file has a YAML header block (title, category, tags, status draft/testing/tested, created, yield, servings, time, oven, equipment, ingredients) followed by a Markdown body. Ingredients are `groups[].items[]` with `name`, `amount` (as written), `grams` (the source of truth), `pct` (baker's %, which the app recalculates on save), `flour: true` (counts toward the 100% base), `hydration` (marks a preferment), `water` (water-content %), `estimated` and `note`. Parse it with the `yaml` package.
-  - Reading needs no index file: one GitHub API call lists every file (`branches/main`, then `git/trees/<sha>?recursive=1`), the files themselves come from `raw.githubusercontent.com/tomstuder/Recipes/<commitSha>/<path>`, and results are cached by blob SHA so only changed files are downloaded again. Without a token, the GitHub API allows 60 requests per hour per visitor, so cache the file list briefly.
-  - Writing commits through the GitHub API to `Recipes` only. The editing token is limited to that repo, so it can't touch the app code or its deploy workflow.
-  - Mapping to the calculator: `flour: true` items become flours, items with `hydration` become preferments, and everything else becomes an ingredient with `pct = grams / flour × 100` and `waterPct = water`.
-- **Security model:**
-  - Anyone can read the site. To edit, the user pastes a fine-grained personal access token that is limited to the `Recipes` content repo, has Contents read/write only, and expires.
-  - The token is stored encrypted (AES-GCM with a key derived from a passphrase) in browser storage. Without it, the app is read-only.
-  - Rendered Markdown must be sanitized so it can't run scripts and steal the token. Keep runtime dependencies minimal.
-- **Calculator scope:** multiple flours, ingredients as % of total flour, total hydration including water in milk, eggs and butter, preferments (levain, poolish, biga) with their own hydration, scaling by dough weight, loaf count or flour weight, and saving a formula into a recipe.
-- **Recipe log:** recipes plus individual bake entries (date, tweaks, temperatures, timings, rating, photos). Diary posts can link to recipes and bakes. Photos are resized in the browser and committed to the repo.
-- **Categories and tags** (user request): recipes, diary posts and reference notes each get one category plus any number of free-form tags, stored in each file's header block. Categories come from a short, editable list per section. The lists live in the content repo's `config.yml`. Recipes: Bread, Enriched bread, Quick breads & muffins, Pastry, Cakes & cookies, Pizza & flatbread, Pasta & noodles, Starters & preferments. Diary: Bake log, Experiment, Learning, Kitchen notes. References: Techniques, Glossary, Links & books, Conversions. List and search views filter by category and tag.
-- **Build order:** 1) shell and deploy (done), 2) calculator (done), 3) content layer, token login, recipe and home editors, bake log (done); next, saving from the calculator, 4) diary and references (done). Save to recipe and deleting recipes (done). The original backlog is complete.
-- **Units:** grams by default; temperatures in both °F and °C.
+**Writing content** (only when unlocked):
+- Auth:
+  - `components/auth-provider.tsx` holds the sign-in and unlock dialogs; `lib/auth-context.ts` provides `useAuth()` with status `signed-out` | `locked` | `unlocked`.
+  - `lib/token-vault.ts` encrypts the token with AES-GCM using a PBKDF2 (600k) key from the passphrase. Only ciphertext is stored (`auth:vault:v1`); the plain token lives in memory.
+  - Only fine-grained `github_pat_` tokens are accepted.
+  - `components/auth-control.tsx` has `<IfEditing>`, the header lock and sign-out (with confirmation) and the footer sign-in link. Visitors see no edit controls.
+- `lib/github.ts`:
+  - `putFile` is one commit per file through the Contents API. Always pass the snapshot's blob `sha` when updating; GitHub then rejects stale saves with a 409, which maps to a `conflict` error.
+  - `deleteFile` deletes one file.
+  - `deletePaths` deletes many files in ONE commit via the Git Data API (ref → commit → tree with `sha: null` → commit → PATCH ref `force: false`). It's used for deleting a whole recipe folder.
+- After every save: `cacheFile(blobSha, text)`, then `invalidateSnapshot()`, then navigate. While unlocked, `setAuthToken` makes snapshot reads authenticated.
+- `lib/serialize.ts` (`serializeRecipe`/`Home`/`Bake`/`Diary`) and `lib/references.ts` (`serializeGlossary`/`Library`/`Conversions`/`Technique`) write files in the hand-written style:
+  - Block YAML, with `[a, b]` tag lists.
+  - One `{ … }` line per ingredient, timeline step and conversion row, using the yaml library's `flow` setting. Never regex-build flow lines, because commas and colons must be quoted.
+  - Ingredient `pct` is recalculated from grams on save.
+  - **Invariant:** re-saving an unchanged file must reproduce it byte for byte (there are tests), so commits show only real edits.
+- `components/editor/`: `fields.tsx` (`TextField`, `MarkdownField` with an optional "Insert photo", `ImageField`, `PhotosField`), `save-bar.tsx` (commit message, Save, unsaved-changes warning), `edit-guard.tsx`, and `sortable.tsx` + `sortable-utils.ts` (dnd-kit rows; `withKey` adds editor-only row keys that serializers never write). Photos are resized in the browser (`lib/image.ts`: 2000 px JPEG) and uploaded immediately as their own commit.
+
+**Calculator** (`lib/bakers.ts`, pure functions; `pages/calculator.tsx` is UI only):
+- Every % is relative to the *final-dough* flour. Preferments are added whole and carry flour and water via their hydration.
+- "Overall" figures include preferment flour and water, plus the water inside ingredients (`waterPct`).
+- `countrySourdough()` (90/10 flour, 75% water, 20% levain at 100%, 2% salt, which gives 77.27% overall) is the main test case. State is kept in localStorage `calculator:v1`, including `source`, the recipe it came from.
+- Recipe ↔ calculator:
+  - `lib/recipe-math.ts`: `recipeStats`, `recipeToFormula`, and `formatOven`/`formatTemp`, which show °F · °C and treat unitless numbers as °F.
+  - `lib/formula-to-recipe.ts`: `formulaToIngredients` (new recipe), `applyFormula` (update a recipe at its own flour weight; matches by name, drops "amount as written" on changed items, ignores ±0.05% calculator rounding), `describeChanges` and `batchLabel` (bake log prefill).
+  - `components/save-to-recipe.tsx` passes `FromCalculator` router state to the editors. Nothing is committed without review in an editor.
+
+**Rendering:** `components/markdown.tsx` must never enable raw HTML (no rehype-raw), because a script injected through content could steal the token. Relative image `src` values resolve to the content repo, and `imageUrls` covers photos uploaded but not yet in the snapshot. `formatDate` and `stripLeadingTitle` are in `lib/format.ts`.
+
+**Theme:** warm palette as shadcn CSS variables in `src/index.css`. Dark mode is `.dark` on `<html>` (`components/theme-toggle.tsx`). Headings use Fraunces (`font-heading`); body text uses Geist.
+
+## Testing notes
+
+- Unit tests sit next to the code (`src/lib/*.test.ts`), covering the math, parsing and serialization round-trips, and GitHub request shapes with a mocked `fetch`. Node-only APIs such as `Buffer` don't type-check in `src/`.
+- For UI changes, the established check is a browser run with `playwright-core` driving the system Chrome against `vite preview` (port 4173). It intercepts every `api.github.com` PUT, DELETE, POST and PATCH, so nothing is written, and injects sample files by extending the `git/trees` response. Also check phone width (390 px) for horizontal overflow.
 
 ## Notes
 
-- The `npm audit` warnings come from the `shadcn` CLI's own dependencies. It's a dev dependency and never reaches the browser; `npm audit --omit=dev` is clean.
+- `npm audit` warnings come from the `shadcn` CLI (a dev dependency). `npm audit --omit=dev` is clean.
+- Some build chunks are named after one module they contain (e.g. `tabs-*.js`, `content-error-*.js`). Those are shared code, not errors.
