@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-"Bake Book": a personal baking web app (calculator, recipes with bake logs, journal, references, bio home page). It's a static React site on GitHub Pages at https://kitchen.tomstuder.com/ (custom domain; the old https://tomstuder.github.io/baker-app/ address redirects there). There are **two repos**:
+"Tom Studer's Bakes" (formerly "Bake Book"): a personal baking web app (calculator, recipes with bake logs, journal, references, bio home page). It's a static React site on GitHub Pages at https://kitchen.tomstuder.com/ (custom domain; the old https://tomstuder.github.io/baker-app/ address redirects there). There are **two repos**:
 
 - **`tomstuder/baker-app`** (this repo): app code only. Pushing to `main` deploys.
 - **`tomstuder/Recipes`**: all content, i.e. the "database". **Its README is the spec for every file format.** The app reads it live and writes to it through the GitHub API, so content changes need no deploy.

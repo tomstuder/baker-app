@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import YAML from 'yaml'
 import { affectedItems, categoryMoves, serializeConfig, setCategory, validateRows } from './categories'
 
-const CONFIG = `# Categories shown in Bake Book. Each recipe, diary post and reference has one category plus any tags.
+const CONFIG = `# Categories shown on Tom Studer's Bakes. Each recipe, diary post and reference has one category plus any tags.
 # Edit these lists to add, rename or reorder categories.
 categories:
   recipes:

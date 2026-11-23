@@ -40,7 +40,7 @@ export function HomePage() {
       <section className="grid items-center gap-10 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         <div className="order-2 md:order-1">
           <div className="flex items-center justify-between gap-4">
-            <p className="text-sm font-medium tracking-wide text-primary uppercase">Bake Book</p>
+            <p className="text-sm font-medium tracking-wide text-primary uppercase">Welcome to my kitchen</p>
             <IfEditing>
               <Button asChild variant="outline" size="sm">
                 <Link to="/edit/home">

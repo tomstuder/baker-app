@@ -36,7 +36,7 @@ export function Layout() {
             </SheetTrigger>
             <SheetContent side="left" className="w-64">
               <SheetHeader>
-                <SheetTitle className="font-heading">Bake Book</SheetTitle>
+                <SheetTitle className="font-heading">Tom Studer&apos;s Bakes</SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col gap-1 px-4">
                 {NAV.map(({ to, label, icon: Icon }) => (
@@ -50,7 +50,7 @@ export function Layout() {
           </Sheet>
 
           <Link to="/" className="font-heading text-lg font-semibold tracking-tight">
-            Bake Book
+            Tom Studer&apos;s Bakes
           </Link>
 
           <nav className="ml-6 hidden gap-1 md:flex">

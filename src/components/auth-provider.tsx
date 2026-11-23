@@ -133,7 +133,7 @@ function SignInDialog({ open, onOpenChange, onDone }: { open: boolean; onOpenCha
                 GitHub → new fine-grained token <ExternalLink className="size-3" />
               </a>
             </li>
-            <li>Name it "Bake Book" and pick an expiration (90 days is a good default).</li>
+            <li>Name it "Tom Studer's Bakes" and pick an expiration (90 days is a good default).</li>
             <li>
               Repository access: <b>Only select repositories</b> → <b>{CONTENT_REPO}</b>.
             </li>

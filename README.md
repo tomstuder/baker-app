@@ -1,4 +1,4 @@
-# Bake Book
+# Tom Studer's Bakes
 
 A personal baking web app: a baker's percentage calculator, recipes with a log of every bake, a
 journal, and a references library. It's a static site on GitHub Pages with **no database**. All
@@ -26,7 +26,7 @@ files in the `Recipes` repo directly. Both create ordinary git commits.
 ### Link previews
 
 When a link to the site is pasted into Messages, Slack or social sites, it shows a card with a
-photo, the title "Bake Book" and a one-line description. These come from the Open Graph `<meta>`
+photo, the title "Tom Studer's Bakes" and a one-line description. These come from the Open Graph `<meta>`
 tags in `index.html` and the image `public/og-image.jpg` (1200 × 630). To change the photo, replace
 that file and push. Apps cache a preview when a link is first sent, so links already shared keep
 the old card.
