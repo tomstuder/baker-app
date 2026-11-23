@@ -15,7 +15,7 @@ content lives as plain files in a separate git repo, so every change has a histo
 | --- | --- |
 | **Home** | Bio, photos, featured recipes, the latest diary post and social links (all from `home.md`). |
 | **Baker's %** | Flour blends, ingredients as % of flour, overall hydration (including water in milk, eggs and butter), levain/poolish/biga with their own hydration, and scaling by loaves, dough weight or flour weight. **Save to recipe** logs a bake, updates a recipe or starts a new one. |
-| **Recipes** | Categories, tags, grams and baker's %, hydration, °F/°C, method with photos, and **Scale in calculator**. Each recipe has a **bake log**: date, rating, batch, changes, temperatures, a timeline and photos. |
+| **Recipes** | Categories, tags, grams and baker's %, hydration, °F/°C, numbered method steps with photos, a ½×–4× batch stepper, and **Scale in calculator**. Each recipe has a **bake log**: date, rating, batch, changes, temperatures, a timeline and photos. |
 | **Diary** | Posts with a cover photo, photos placed in the text, categories and tags, and links to recipes or specific bakes. |
 | **References** | Converter (cups to grams per ingredient, °F/°C, g/oz, yeast types), techniques, a searchable glossary, and a library of links, books, videos and uploaded PDFs. |
 
@@ -120,7 +120,8 @@ npm run dev        # http://localhost:5173/baker-app/  (the /baker-app/ path is 
 ### Tech stack
 
 - React 19 + TypeScript, built with Vite
-- [shadcn/ui](https://ui.shadcn.com/) on Tailwind CSS v4, with lucide icons
+- [shadcn/ui](https://ui.shadcn.com/) on Tailwind CSS v4, with lucide icons. The palette (cream, sienna, ink…) and
+  fonts (Fraunces, Lora, DM Mono, self-hosted) are theme tokens in `src/index.css`
 - React Router (hash routing, so deep links work on GitHub Pages)
 - `yaml`, `react-markdown` + `remark-gfm`, `@dnd-kit` (drag to reorder, editor pages only), `sonner`
 

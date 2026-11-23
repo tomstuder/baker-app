@@ -1,14 +1,28 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
-@import "@fontsource-variable/fraunces";
+/* Fonts are self-hosted (no Google Fonts requests): Fraunces for headings, Lora for text, DM Mono for numbers. */
+@import "@fontsource-variable/fraunces/opsz.css";
+@import "@fontsource-variable/fraunces/opsz-italic.css";
+@import "@fontsource-variable/lora/index.css";
+@import "@fontsource-variable/lora/wght-italic.css";
+@import "@fontsource/dm-mono/400.css";
+@import "@fontsource/dm-mono/500.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
     --font-heading: 'Fraunces Variable', Georgia, serif;
-    --font-sans: 'Geist Variable', sans-serif;
+    --font-sans: 'Lora Variable', Georgia, serif;
+    --font-mono: 'DM Mono', ui-monospace, monospace;
+    /* Bake Book palette (from the Figma concept), usable as bg-sienna, text-bark, etc. */
+    --color-cream: #faf7f2;
+    --color-parchment: #f5f0e8;
+    --color-mist: #e8e2d7;
+    --color-warm-gray: #9c9185;
+    --color-bark: #6b5c45;
+    --color-sienna: #b5622a;
+    --color-ink: #1c1a16;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -50,24 +64,24 @@
 }
 
 :root {
-    --background: oklch(0.985 0.008 85);
-    --foreground: oklch(0.24 0.03 55);
-    --card: oklch(0.995 0.005 85);
-    --card-foreground: oklch(0.24 0.03 55);
-    --popover: oklch(0.995 0.005 85);
-    --popover-foreground: oklch(0.24 0.03 55);
-    --primary: oklch(0.52 0.12 50);
-    --primary-foreground: oklch(0.985 0.01 85);
-    --secondary: oklch(0.95 0.02 80);
-    --secondary-foreground: oklch(0.3 0.04 55);
-    --muted: oklch(0.955 0.015 80);
-    --muted-foreground: oklch(0.5 0.03 60);
-    --accent: oklch(0.93 0.035 75);
-    --accent-foreground: oklch(0.3 0.05 55);
+    --background: #faf7f2;        /* cream */
+    --foreground: #1c1a16;        /* ink */
+    --card: #f5f0e8;              /* parchment */
+    --card-foreground: #1c1a16;
+    --popover: #faf7f2;
+    --popover-foreground: #1c1a16;
+    --primary: #b5622a;           /* sienna */
+    --primary-foreground: #faf7f2;
+    --secondary: #e8e2d7;         /* mist */
+    --secondary-foreground: #1c1a16;
+    --muted: #efe9e0;
+    --muted-foreground: #6b5c45;  /* bark */
+    --accent: #e8e2d7;
+    --accent-foreground: #1c1a16;
     --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.9 0.02 75);
-    --input: oklch(0.88 0.02 75);
-    --ring: oklch(0.62 0.11 55);
+    --border: #e8e2d7;
+    --input: #dcd4c6;
+    --ring: #b5622a;
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
@@ -85,24 +99,24 @@
 }
 
 .dark {
-    --background: oklch(0.19 0.015 55);
-    --foreground: oklch(0.94 0.015 80);
-    --card: oklch(0.23 0.018 55);
-    --card-foreground: oklch(0.94 0.015 80);
-    --popover: oklch(0.23 0.018 55);
-    --popover-foreground: oklch(0.94 0.015 80);
-    --primary: oklch(0.72 0.12 60);
-    --primary-foreground: oklch(0.2 0.03 55);
-    --secondary: oklch(0.28 0.02 55);
-    --secondary-foreground: oklch(0.94 0.015 80);
-    --muted: oklch(0.27 0.018 55);
-    --muted-foreground: oklch(0.72 0.025 70);
-    --accent: oklch(0.3 0.03 55);
-    --accent-foreground: oklch(0.94 0.015 80);
+    --background: #1c1a16;
+    --foreground: #f5f0e8;
+    --card: #24211c;
+    --card-foreground: #f5f0e8;
+    --popover: #24211c;
+    --popover-foreground: #f5f0e8;
+    --primary: #d98a52;
+    --primary-foreground: #1c1a16;
+    --secondary: #302b24;
+    --secondary-foreground: #f5f0e8;
+    --muted: #2a2620;
+    --muted-foreground: #b3a796;
+    --accent: #332d25;
+    --accent-foreground: #f5f0e8;
     --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.6 0.1 60);
+    --border: #3a342b;
+    --input: #4a4236;
+    --ring: #d98a52;
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
@@ -132,5 +146,35 @@
 @layer base {
   h1, h2, h3 {
     @apply font-heading tracking-tight;
+  }
+}
+
+/* Numbered method steps (Markdown ordered lists): 01, 02… in the left gutter. A step that starts
+   with bold text ("1. **Autolyse.** Combine…") shows that text as the step's title. */
+@layer components {
+  .md-steps {
+    counter-reset: step;
+  }
+  .md-steps > li {
+    counter-increment: step;
+    position: relative;
+    padding-left: 3.25rem;
+  }
+  .md-steps > li::before {
+    content: counter(step, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    top: 0.3em;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--primary);
+  }
+  .md-steps > li > strong:first-child,
+  .md-steps > li > p:first-child > strong:first-child {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    font-weight: 600;
   }
 }

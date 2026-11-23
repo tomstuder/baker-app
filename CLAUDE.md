@@ -77,7 +77,7 @@ Deploy: pushing to `main` runs `.github/workflows/deploy.yml` (Pages `build_type
 
 **Rendering:** `components/markdown.tsx` must never enable raw HTML (no rehype-raw), because a script injected through content could steal the token. Relative image `src` values resolve to the content repo, and `imageUrls` covers photos uploaded but not yet in the snapshot. `formatDate` and `stripLeadingTitle` are in `lib/format.ts`.
 
-**Theme:** warm palette as shadcn CSS variables in `src/index.css`. Dark mode is `.dark` on `<html>` (`components/theme-toggle.tsx`). Headings use Fraunces (`font-heading`); body text uses Geist.
+**Theme:** the user's Figma palette (cream, parchment, mist, warm-gray, bark, sienna, ink) mapped onto the shadcn CSS variables in `src/index.css`; the raw colors are also Tailwind colors (`text-sienna`, `bg-parchment`…). Always style through shadcn components and tokens (`bg-muted`, `text-primary`), not new component libraries. Dark mode is `.dark` on `<html>` (`components/theme-toggle.tsx`) with its own token values. Fonts are self-hosted via Fontsource (no Google Fonts requests): Fraunces (`font-heading`), Lora (`font-sans`, body text) and DM Mono (`font-mono`, used for gram amounts and stats). Markdown ordered lists render as numbered steps (`.md-steps`: 01, 02… in sienna; a step that starts with **bold** shows it as the step title). The recipe page has a view-only batch stepper (½× to 4×) that scales grams.
 
 ## Testing notes
 

@@ -1,12 +1,13 @@
+import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Calculator, Clock, ExternalLink, History, Pencil, Thermometer, Users, UtensilsCrossed } from 'lucide-react'
+import { ArrowLeft, Calculator, Clock, ExternalLink, History, Minus, Pencil, Plus, Thermometer, Users, UtensilsCrossed } from 'lucide-react'
 import { IfEditing } from '@/components/auth-control'
 import { ContentError } from '@/components/content-error'
 import { Markdown } from '@/components/markdown'
 import { StatusBadge } from '@/components/recipe-card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useContent } from '@/hooks/use-content'
@@ -24,6 +25,7 @@ export function RecipePage() {
   })
   const recipe = data?.recipe
   const navigate = useNavigate()
+  const [batch, setBatch] = useState(1)
 
   if (loading) {
     return (
@@ -99,15 +101,18 @@ export function RecipePage() {
           {hasIngredients ? (
             <Card>
               <CardHeader>
-                <CardTitle>Ingredients</CardTitle>
+                <CardTitle className="font-heading text-2xl">Ingredients</CardTitle>
+                <CardAction>
+                  <BatchStepper value={batch} onChange={setBatch} />
+                </CardAction>
               </CardHeader>
               <CardContent className="space-y-6">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Ingredient</TableHead>
-                      <TableHead className="text-right">Grams</TableHead>
-                      <TableHead className="w-14 text-right">%</TableHead>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-24 text-right font-mono text-xs tracking-wider uppercase">Grams</TableHead>
+                      <TableHead className="font-mono text-xs tracking-wider uppercase">Ingredient</TableHead>
+                      <TableHead className="w-14 text-right font-mono text-xs tracking-wider uppercase">%</TableHead>
                     </TableRow>
                   </TableHeader>
                   {recipe.ingredients.map((g, gi) => (
@@ -115,7 +120,7 @@ export function RecipePage() {
                       {(g.group || g.note) && (
                         <TableRow className="hover:bg-transparent">
                           <TableCell colSpan={3} className="pt-5 whitespace-normal">
-                            {g.group && <span className="block text-sm font-semibold">{g.group}</span>}
+                            {g.group && <span className="block font-heading text-base font-semibold">{g.group}</span>}
                             {g.note && <span className="block text-xs text-muted-foreground">{g.note}</span>}
                           </TableCell>
                         </TableRow>
@@ -123,24 +128,33 @@ export function RecipePage() {
                       {g.items.map((i, ii) => {
                         const pct = stats.base > 0 ? itemPct(i, stats.base) : undefined
                         return (
-                          <TableRow key={ii}>
-                            <TableCell className="whitespace-normal">
-                              <span className={i.flour ? 'font-medium' : undefined}>{i.name}</span>
-                              {(i.amount || i.note) && (
-                                <span className="block text-xs text-muted-foreground">{[i.amount, i.note].filter(Boolean).join(' · ')}</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right font-medium tabular-nums">
+                          <TableRow key={ii} className="hover:bg-transparent">
+                            <TableCell className="py-3 text-right align-top font-mono text-primary tabular-nums">
                               {i.grams !== undefined ? (
                                 <span title={i.estimated ? 'Estimated weight' : undefined}>
                                   {i.estimated && '~'}
-                                  {formatGrams(i.grams)}
+                                  {formatGrams(i.grams * batch)} g
+                                </span>
+                              ) : i.amount ? (
+                                <span className="whitespace-normal" title={batch !== 1 ? 'Not scaled: no weight given' : undefined}>
+                                  {i.amount}
+                                  {batch !== 1 && <span className="text-muted-foreground"> ×{batch}</span>}
                                 </span>
                               ) : (
                                 <span className="text-muted-foreground">–</span>
                               )}
                             </TableCell>
-                            <TableCell className="text-right text-muted-foreground tabular-nums">{pct !== undefined ? formatPct(pct) : ''}</TableCell>
+                            <TableCell className="py-3 align-top whitespace-normal">
+                              <span className={i.flour ? 'font-medium' : undefined}>{i.name}</span>
+                              {((i.amount && i.grams !== undefined && batch === 1) || i.note) && (
+                                <span className="block text-xs text-muted-foreground">
+                                  {[i.grams !== undefined && batch === 1 && i.amount, i.note].filter(Boolean).join(' · ')}
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell className="py-3 text-right align-top font-mono text-xs text-muted-foreground tabular-nums">
+                              {pct !== undefined ? formatPct(pct) : ''}
+                            </TableCell>
                           </TableRow>
                         )
                       })}
@@ -149,10 +163,10 @@ export function RecipePage() {
                 </Table>
 
                 {stats.base > 0 && (
-                  <dl className="grid grid-cols-3 gap-3 border-t pt-4 text-sm">
+                  <dl className="grid grid-cols-3 gap-3 rounded-lg bg-muted p-4 font-mono text-sm">
                     <Stat label="Hydration" value={`${formatPct(stats.hydration)}%`} />
-                    <Stat label="Flour (total)" value={`${formatGrams(stats.flour)} g`} />
-                    <Stat label="Total weight" value={`${formatGrams(stats.total)} g`} />
+                    <Stat label="Flour" value={`${formatGrams(stats.flour * batch)} g`} />
+                    <Stat label="Total" value={`${formatGrams(stats.total * batch)} g`} />
                   </dl>
                 )}
                 {recipe.ingredients.some((g) => g.items.some((i) => i.estimated)) && (
@@ -240,8 +254,29 @@ function Meta({ recipe }: { recipe: Recipe }) {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="font-medium tabular-nums">{value}</dd>
+      <dt className="text-xs tracking-wider text-muted-foreground uppercase">{label}</dt>
+      <dd className="tabular-nums">{value}</dd>
+    </div>
+  )
+}
+
+const BATCHES = [0.5, 1, 1.5, 2, 3, 4]
+
+/** Multiplies the recipe's weights for this view only (the recipe itself is unchanged). */
+function BatchStepper({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  const i = BATCHES.indexOf(value)
+  return (
+    <div className="flex items-center rounded-full border bg-background" role="group" aria-label="Batch size">
+      <Button variant="ghost" size="icon-sm" className="rounded-full" aria-label="Smaller batch" disabled={i <= 0} onClick={() => onChange(BATCHES[i - 1])}>
+        <Minus />
+      </Button>
+      <div className="min-w-16 border-x px-2 text-center leading-tight" aria-live="polite">
+        <span className="block font-mono text-sm">{value}×</span>
+        <span className="block font-mono text-[0.625rem] tracking-widest text-muted-foreground uppercase">batch</span>
+      </div>
+      <Button variant="ghost" size="icon-sm" className="rounded-full" aria-label="Larger batch" disabled={i >= BATCHES.length - 1} onClick={() => onChange(BATCHES[i + 1])}>
+        <Plus />
+      </Button>
     </div>
   )
 }
