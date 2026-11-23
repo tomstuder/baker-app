@@ -28,8 +28,47 @@ files in the `Recipes` repo directly. Both create ordinary git commits.
   choose a passphrase. Edit buttons then appear throughout the site. On later visits, unlock with
   the passphrase (🔒 in the header). **Lock** hides the edit controls; **Sign out** removes the
   saved token from that browser.
-- **On GitHub or locally:** edit files in `tomstuder/Recipes` (pencil icon on GitHub, or clone,
-  edit, push). The site picks up changes within about 5 minutes, or immediately in a new tab.
+- **On GitHub:** open a file in `tomstuder/Recipes` and use the pencil icon. Saving makes a commit.
+- **On the desktop:** see [Editing on the desktop](#editing-on-the-desktop).
+
+The site picks up content changes within about 5 minutes, or right away in a new tab. Content
+changes never need a deploy and never touch this repo's code.
+
+### Editing on the desktop
+
+Keep a clone of the content repo next to this one:
+
+```
+~/Documents/claude/
+  baker-app/     this repo (app code)
+  Recipes/       content: git clone https://github.com/tomstuder/Recipes.git
+```
+
+Don't clone it inside `baker-app`. Saves made in the app are commits to `Recipes` too, so the
+desktop copy falls behind whenever you edit in the browser:
+
+```sh
+cd ~/Documents/claude/Recipes
+git pull                                  # always first
+# edit files…
+git add -A && git commit -m "Describe the change"
+git push                                  # live on the site within ~5 minutes
+```
+
+If a push is rejected, run `git pull` and push again. The file formats are documented in the
+`Recipes` README. In a recipe, `grams` is the value that counts; the app works out baker's %
+from it. If a file's header (the YAML between the `---` lines) has a mistake, only that page
+fails to show. Fix it and push again; every earlier version stays in git history.
+
+### Categories and tags
+
+- **Categories** for recipes, the diary and references are listed in `Recipes/config.yml`. Add,
+  rename or reorder lines there; the order is the order of the filters and recipe sections. A
+  category used in a file but missing from the list still shows, after the listed ones, but only
+  listed categories appear in the editors' dropdowns. Renaming a category doesn't change files
+  that already use the old name.
+- **Tags** need no setup: type any tag on a recipe or post and it appears in the filters.
+- `config.yml` can't be edited in the app yet; use GitHub or the desktop.
 
 ### Creating the token
 
