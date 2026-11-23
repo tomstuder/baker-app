@@ -35,17 +35,17 @@ export function DiaryPage() {
 
   return (
     <>
-      <PageHeader title="Diary" description="Notes from the kitchen: what I baked, tried and learned.">
+      <PageHeader title="Journal" description="Notes from the kitchen: what I baked, tried and learned.">
         <IfEditing>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" asChild>
-              <Link to="/edit/categories?from=diary">
+              <Link to="/edit/categories?from=journal">
                 <Tags />
                 Categories
               </Link>
             </Button>
             <Button asChild>
-              <Link to="/diary/new">
+              <Link to="/journal/new">
                 <Plus />
                 New post
               </Link>
@@ -113,7 +113,7 @@ export function DiaryPage() {
 function PostRow({ post: p, snap }: { post: DiaryPost; snap?: Snapshot }) {
   const cover = snap ? assetUrl(snap, p.path, p.image) : undefined
   return (
-    <Link to={`/diary/${p.slug}`} className="group flex gap-5 py-6">
+    <Link to={`/journal/${p.slug}`} className="group flex gap-5 py-6">
       <div className="min-w-0 flex-1">
         <p className="text-sm text-muted-foreground">
           {[p.date && formatDate(p.date), p.category].filter(Boolean).join(' · ')}

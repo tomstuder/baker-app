@@ -74,7 +74,7 @@ export function DeleteRecipeDialog({ open, onOpenChange, recipe, onDeleted }: { 
                 <ul className="mt-1 list-disc space-y-0.5 pl-5 text-muted-foreground">
                   {data.featured && <li>Featured on the home page</li>}
                   {data.mentions.map((t) => (
-                    <li key={t}>Diary: {t}</li>
+                    <li key={t}>Journal: {t}</li>
                   ))}
                 </ul>
               </div>

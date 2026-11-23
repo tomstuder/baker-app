@@ -42,7 +42,7 @@ export function DiaryPostPage() {
       <div className="py-16 text-center">
         <h1 className="text-3xl font-semibold">Post not found</h1>
         <Button asChild className="mt-6">
-          <Link to="/diary">All posts</Link>
+          <Link to="/journal">All posts</Link>
         </Button>
       </div>
     )
@@ -53,14 +53,14 @@ export function DiaryPostPage() {
 
   return (
     <article className="mx-auto max-w-3xl">
-      <Link to="/diary" className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="size-4" /> Diary
+      <Link to="/journal" className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="size-4" /> Journal
       </Link>
 
       <header className="mb-8">
         <div className="mb-3 flex flex-wrap items-center gap-2">
           {post.category && (
-            <Link to={`/diary?category=${encodeURIComponent(post.category)}`}>
+            <Link to={`/journal?category=${encodeURIComponent(post.category)}`}>
               <Badge variant="secondary">{post.category}</Badge>
             </Link>
           )}
@@ -69,7 +69,7 @@ export function DiaryPostPage() {
           <h1 className="text-4xl font-semibold sm:text-5xl">{post.title}</h1>
           <IfEditing>
             <Button asChild variant="outline">
-              <Link to={`/diary/${post.slug}/edit`}>
+              <Link to={`/journal/${post.slug}/edit`}>
                 <Pencil />
                 Edit
               </Link>
@@ -83,7 +83,7 @@ export function DiaryPostPage() {
             </span>
           )}
           {post.tags.map((t) => (
-            <Link key={t} to={`/diary?tag=${encodeURIComponent(t)}`} className="hover:text-primary">
+            <Link key={t} to={`/journal?tag=${encodeURIComponent(t)}`} className="hover:text-primary">
               #{t}
             </Link>
           ))}
@@ -113,7 +113,7 @@ export function DiaryPostPage() {
 
       <nav aria-label="More posts" className="mt-12 grid grid-cols-1 gap-3 border-t pt-6 sm:grid-cols-2">
         {data.older ? (
-          <Link to={`/diary/${data.older.slug}`} className="group rounded-xl border p-4 hover:border-primary/50">
+          <Link to={`/journal/${data.older.slug}`} className="group rounded-xl border p-4 hover:border-primary/50">
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <ArrowLeft className="size-3.5" /> Older
             </span>
@@ -123,7 +123,7 @@ export function DiaryPostPage() {
           <span />
         )}
         {data.newer && (
-          <Link to={`/diary/${data.newer.slug}`} className="group rounded-xl border p-4 text-right hover:border-primary/50">
+          <Link to={`/journal/${data.newer.slug}`} className="group rounded-xl border p-4 text-right hover:border-primary/50">
             <span className="flex items-center justify-end gap-1 text-xs text-muted-foreground">
               Newer <ArrowRight className="size-3.5" />
             </span>

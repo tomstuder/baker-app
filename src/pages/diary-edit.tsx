@@ -81,7 +81,7 @@ function DiaryForm({
   const navigate = useNavigate()
   const [p, setP] = useState<DiaryPost>(initial)
   const [tagsText, setTagsText] = useState(initial.tags.join(', '))
-  const [message, setMessage] = useState(isNew ? '' : `Update diary: ${initial.title}`)
+  const [message, setMessage] = useState(isNew ? '' : `Update journal: ${initial.title}`)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [dirty, setDirty] = useState(false)
@@ -122,12 +122,12 @@ function DiaryForm({
     const text = serializeDiary(post)
     setSaving(true)
     try {
-      const res = await putFile({ token, path, content: text, message: message.trim() || `${isNew ? 'Add' : 'Update'} diary: ${post.title}`, sha })
+      const res = await putFile({ token, path, content: text, message: message.trim() || `${isNew ? 'Add' : 'Update'} journal: ${post.title}`, sha })
       cacheFile(res.blobSha, text)
       invalidateSnapshot()
       setDirty(false)
       toast.success(`Saved · commit ${res.commitSha.slice(0, 7)}`)
-      navigate(`/diary/${slug}`)
+      navigate(`/journal/${slug}`)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     } finally {
@@ -139,11 +139,11 @@ function DiaryForm({
     if (!token || !sha) return
     setSaving(true)
     try {
-      const res = await deleteFile({ token, path: p.path, sha, message: `Delete diary: ${p.title}` })
+      const res = await deleteFile({ token, path: p.path, sha, message: `Delete journal: ${p.title}` })
       invalidateSnapshot()
       setDirty(false)
       toast.success(`Post deleted · commit ${res.commitSha.slice(0, 7)}. It's still in the git history.`)
-      navigate('/diary')
+      navigate('/journal')
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
       setConfirmDelete(false)
@@ -154,11 +154,11 @@ function DiaryForm({
 
   return (
     <div>
-      <Link to={isNew ? '/diary' : `/diary/${p.slug}`} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="size-4" /> {isNew ? 'Diary' : p.title}
+      <Link to={isNew ? '/journal' : `/journal/${p.slug}`} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="size-4" /> {isNew ? 'Journal' : p.title}
       </Link>
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
-        <h1 className="text-3xl font-semibold">{isNew ? 'New diary post' : 'Edit post'}</h1>
+        <h1 className="text-3xl font-semibold">{isNew ? 'New journal post' : 'Edit post'}</h1>
         {!isNew && (
           <Button variant="outline" onClick={() => setConfirmDelete(true)} className="text-destructive">
             <Trash2 />
@@ -275,13 +275,13 @@ function DiaryForm({
         </Card>
       </div>
 
-      <SaveBar message={message} onMessage={setMessage} onSave={save} onCancel={() => navigate(isNew ? '/diary' : `/diary/${p.slug}`)} saving={saving} dirty={dirty} error={error} />
+      <SaveBar message={message} onMessage={setMessage} onSave={save} onCancel={() => navigate(isNew ? '/journal' : `/journal/${p.slug}`)} saving={saving} dirty={dirty} error={error} />
 
       <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="font-heading">Delete this post?</DialogTitle>
-            <DialogDescription>"{p.title}" will be removed from the diary. It stays in the Recipes repo's git history, so it can be restored. Its photos are kept.</DialogDescription>
+            <DialogDescription>"{p.title}" will be removed from the journal. It stays in the Recipes repo's git history, so it can be restored. Its photos are kept.</DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
             <DialogClose asChild>

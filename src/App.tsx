@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AuthProvider } from '@/components/auth-provider'
 import { Layout } from '@/components/layout'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -50,10 +50,11 @@ function AppRoutes() {
         <Route path="recipes/:slug/bakes/:bake/edit" element={<Suspense fallback={editorFallback}><BakeEditPage /></Suspense>} />
         <Route path="edit/home" element={<Suspense fallback={editorFallback}><HomeEditPage /></Suspense>} />
         <Route path="edit/categories" element={<Suspense fallback={editorFallback}><CategoriesEditPage /></Suspense>} />
-        <Route path="diary" element={<DiaryPage />} />
-        <Route path="diary/new" element={<Suspense fallback={editorFallback}><DiaryEditPage /></Suspense>} />
-        <Route path="diary/:slug" element={<DiaryPostPage />} />
-        <Route path="diary/:slug/edit" element={<Suspense fallback={editorFallback}><DiaryEditPage /></Suspense>} />
+        <Route path="journal" element={<DiaryPage />} />
+        <Route path="journal/new" element={<Suspense fallback={editorFallback}><DiaryEditPage /></Suspense>} />
+        <Route path="journal/:slug" element={<DiaryPostPage />} />
+        <Route path="journal/:slug/edit" element={<Suspense fallback={editorFallback}><DiaryEditPage /></Suspense>} />
+        <Route path="diary/*" element={<DiaryRedirect />} />
         <Route path="references" element={<ReferencesPage />} />
         <Route path="references/techniques/new" element={<Suspense fallback={editorFallback}><TechniqueEditPage /></Suspense>} />
         <Route path="references/techniques/:slug" element={<TechniquePage />} />
@@ -63,4 +64,10 @@ function AppRoutes() {
       </Route>
     </Routes>
   )
+}
+
+/** The diary was renamed Journal: old /diary links (and their ?category= / ?tag= filters) still work. */
+function DiaryRedirect() {
+  const { pathname, search } = useLocation()
+  return <Navigate replace to={pathname.replace(/^\/diary/, '/journal') + search} />
 }

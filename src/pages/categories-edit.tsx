@@ -34,7 +34,7 @@ import { commitFiles, type FileChange } from '@/lib/github'
 
 const SECTION = {
   recipes: { title: 'Recipe categories', label: 'recipe', noun: ['recipe', 'recipes'] },
-  diary: { title: 'Diary categories', label: 'diary', noun: ['post', 'posts'] },
+  diary: { title: 'Journal categories', label: 'journal', noun: ['post', 'posts'] },
 } as const
 
 const count = (n: number, s: CategorySection) => `${n} ${SECTION[s].noun[n === 1 ? 0 : 1]}`
@@ -75,7 +75,7 @@ function CategoriesForm({
   const { token } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const back = params.get('from') === 'diary' ? '/diary' : '/recipes'
+  const back = params.get('from') === 'journal' ? '/journal' : '/recipes'
   const [state, setState] = useState<Record<CategorySection, SectionState>>(() => ({
     recipes: { rows: lists.recipes.map((name) => ({ key: newId(), name, original: name })), removed: [] },
     diary: { rows: lists.diary.map((name) => ({ key: newId(), name, original: name })), removed: [] },
@@ -153,7 +153,7 @@ function CategoriesForm({
   return (
     <div>
       <Link to={back} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="size-4" /> {back === '/diary' ? 'Diary' : 'Recipes'}
+        <ArrowLeft className="size-4" /> {back === '/journal' ? 'Journal' : 'Recipes'}
       </Link>
       <h1 className="text-3xl font-semibold">Edit categories</h1>
       <p className="mt-1 mb-8 max-w-2xl text-muted-foreground">
@@ -162,7 +162,7 @@ function CategoriesForm({
       </p>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        {(params.get('from') === 'diary' ? (['diary', 'recipes'] as const) : CATEGORY_SECTIONS).map((s) => (
+        {(params.get('from') === 'journal' ? (['diary', 'recipes'] as const) : CATEGORY_SECTIONS).map((s) => (
           <SectionEditor key={s} section={s} value={state[s]} items={items[s]} onChange={(v) => update(s, v)} />
         ))}
       </div>

@@ -118,14 +118,14 @@ export function HomePage() {
         {!loading && !error && featured.length === 0 && <p className="text-muted-foreground">No recipes yet.</p>}
       </section>
 
-      {/* Diary + tools */}
+      {/* Journal + tools */}
       <section className="grid gap-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div>
-          <SectionHeader title="From the diary" to="/diary" linkLabel="All posts" />
+          <SectionHeader title="From the journal" to="/journal" linkLabel="All posts" />
           {loading ? (
             <Skeleton className="h-40 rounded-xl" />
           ) : data?.latestPost ? (
-            <Link to={`/diary/${data.latestPost.slug}`} className="group block">
+            <Link to={`/journal/${data.latestPost.slug}`} className="group block">
               <Card className="transition-colors group-hover:border-primary/50">
                 <CardContent className="space-y-2">
                   {data.latestPost.date && <p className="text-sm text-muted-foreground">{formatDate(data.latestPost.date)}</p>}
@@ -141,7 +141,7 @@ export function HomePage() {
             <Card>
               <CardContent className="flex items-center gap-4 text-muted-foreground">
                 <NotebookPen className="size-6 shrink-0 text-primary/60" aria-hidden />
-                <p>No diary posts yet. The first one is on its way.</p>
+                <p>No journal posts yet. The first one is on its way.</p>
               </CardContent>
             </Card>
           )}
