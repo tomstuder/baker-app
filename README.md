@@ -1,26 +1,38 @@
 # Bake Book
 
 A personal baking web app: a baker's percentage calculator, recipes with a log of every bake, a
-diary, and a references library. It's a static site on GitHub Pages with **no database**. All
+journal, and a references library. It's a static site on GitHub Pages with **no database**. All
 content lives as plain files in a separate git repo, so every change has a history.
 
 - **Live site:** https://tomstuder.github.io/baker-app/
 - **App code (this repo):** https://github.com/tomstuder/baker-app
-- **Content:** https://github.com/tomstuder/Recipes. Recipes, bakes, diary, references and photos
-  live there. Its README documents the file formats.
+- **Content:** https://github.com/tomstuder/Recipes. Recipes, bakes, journal posts, references and photos
+  live there (journal posts are in the `diary/` folder). Its README documents the file formats.
 
 ## Features
 
 | Section | What it does |
 | --- | --- |
-| **Home** | Bio, photos, featured recipes, the latest diary post and social links (all from `home.md`). |
+| **Home** | Bio, photos, featured recipes, the latest journal post and social links (all from `home.md`). |
 | **Baker's %** | Flour blends, ingredients as % of flour, overall hydration (including water in milk, eggs and butter), levain/poolish/biga with their own hydration, and scaling by loaves, dough weight or flour weight. **Save to recipe** logs a bake, updates a recipe or starts a new one. |
 | **Recipes** | Categories, tags, grams and baker's %, hydration, °F/°C, numbered method steps with photos, a ½×–4× batch stepper, and **Scale in calculator**. Each recipe has a **bake log**: date, rating, batch, changes, temperatures, a timeline and photos. |
-| **Diary** | Posts with a cover photo, photos placed in the text, categories and tags, and links to recipes or specific bakes. |
+| **Journal** | Posts with a cover photo, photos placed in the text, categories and tags, and links to recipes or specific bakes. |
 | **References** | Converter (cups to grams per ingredient, °F/°C, g/oz, yeast types), techniques, a searchable glossary, and a library of links, books, videos and uploaded PDFs. |
 
 Everything can be edited in the app after signing in (see [Editing](#editing)), or by editing the
 files in the `Recipes` repo directly. Both create ordinary git commits.
+
+### Link previews
+
+When a link to the site is pasted into Messages, Slack or social sites, it shows a card with a
+photo, the title "Bake Book" and a one-line description. These come from the Open Graph `<meta>`
+tags in `index.html` and the image `public/og-image.jpg` (1200 × 630). To change the photo, replace
+that file and push. Apps cache a preview when a link is first sent, so links already shared keep
+the old card.
+
+Every link currently shows the same card, because everything after `#` in a link (e.g.
+`#/recipes/cornbread`) never reaches the server and preview services don't run the app.
+See [Planned](#planned) for per-recipe previews.
 
 ## Editing
 
@@ -62,8 +74,8 @@ fails to show. Fix it and push again; every earlier version stays in git history
 
 ### Categories and tags
 
-- **Categories** for recipes and the diary: when signed in, click **Categories** on the Recipes or
-  Diary page. Add, rename, drag to reorder or remove them; the order is the order of the filters
+- **Categories** for recipes and the journal: when signed in, click **Categories** on the Recipes or
+  Journal page. Add, rename, drag to reorder or remove them; the order is the order of the filters
   and recipe sections. **Renaming updates every recipe or post that uses the category**, and a
   removed category's items can be moved to another one, all in one commit. Categories used in
   files but missing from the list are offered for adding.
@@ -132,7 +144,7 @@ src/
   App.tsx                 routes (editor pages are lazy-loaded)
   lib/
     bakers.ts             baker's % math (calculator)
-    content.ts            reading the Recipes repo; recipes, bakes, diary, home, config
+    content.ts            reading the Recipes repo; recipes, bakes, journal (diary/), home, config
     references.ts         glossary, library, conversions, techniques + converter math
     serialize.ts          writing files back in the hand-written format
     github.ts             saving: putFile, deleteFile, deletePaths (multi-file delete)
@@ -152,6 +164,15 @@ the **Actions** tab. Content changes in `Recipes` don't need a deploy; the app r
 
 If this repo is renamed, or a custom domain is added, update `base` in `vite.config.ts`
 (`'/'` for a custom domain).
+
+## Planned
+
+- **Per-recipe and per-post link previews.** At build time, generate a small share page for each
+  recipe and journal post (e.g. `/baker-app/s/<slug>/`) with that item's photo, title and summary
+  in Open Graph tags, which forwards visitors to the real `#/…` page. Add a **Share** button that
+  copies that link. A save in `Recipes` would trigger a rebuild of this site (a workflow in
+  `Recipes` with a token allowed to start this repo's deploy), so new items can be shared within
+  about a minute.
 
 ## Troubleshooting
 

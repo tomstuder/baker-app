@@ -66,6 +66,11 @@ Deploy: pushing to `main` runs `.github/workflows/deploy.yml` (Pages `build_type
   - **Invariant:** re-saving an unchanged file must reproduce it byte for byte (there are tests), so commits show only real edits.
 - `components/editor/`: `fields.tsx` (`TextField`, `MarkdownField` with an optional "Insert photo", `ImageField`, `PhotosField`), `save-bar.tsx` (commit message, Save, unsaved-changes warning), `edit-guard.tsx`, and `sortable.tsx` + `sortable-utils.ts` (dnd-kit rows; `withKey` adds editor-only row keys that serializers never write). Photos are resized in the browser (`lib/image.ts`: 2000 px JPEG) and uploaded immediately as their own commit.
 
+**Link previews:** static Open Graph / Twitter tags in `index.html` (absolute URLs to `https://tomstuder.github.io/baker-app/`, update them if the domain changes) plus `public/og-image.jpg` (1200 × 630, cropped from the home photo). They're site-wide: the `#/…` part of a URL never reaches the server, and preview crawlers don't run JS, so per-page tags can't be set at runtime.
+
+**Backlog:**
+- Per-recipe/post link previews: a build step generates `s/<slug>/index.html` share pages (OG tags from the item's title, summary and photo as an absolute raw.githubusercontent URL, then a redirect to the `#/…` route), a Share button that copies the share URL, and a rebuild triggered by pushes to `Recipes` (`repository_dispatch` from a Recipes workflow, using a token secret allowed to run this repo's Actions). Not started.
+
 **Calculator** (`lib/bakers.ts`, pure functions; `pages/calculator.tsx` is UI only):
 - Every % is relative to the *final-dough* flour. Preferments are added whole and carry flour and water via their hydration.
 - "Overall" figures include preferment flour and water, plus the water inside ingredients (`waterPct`).
