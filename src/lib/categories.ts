@@ -10,7 +10,7 @@ export type CategorySection = (typeof CATEGORY_SECTIONS)[number]
 export type CategoryLists = Record<CategorySection, string[]>
 
 const NEW_CONFIG_HEADER =
-  '# Categories shown in Bake Book. Each recipe, diary post and reference has one category plus any tags.\n' +
+  '# Categories shown in Bake Book. Each recipe, journal post and reference has one category plus any tags.\n' +
   '# Edit these lists to add, rename or reorder categories.\n'
 
 const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i])
