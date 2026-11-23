@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-"Bake Book": a personal baking web app (calculator, recipes with bake logs, diary, references, bio home page). It's a static React site on GitHub Pages at https://tomstuder.github.io/baker-app/. There are **two repos**:
+"Bake Book": a personal baking web app (calculator, recipes with bake logs, journal, references, bio home page). It's a static React site on GitHub Pages at https://tomstuder.github.io/baker-app/. There are **two repos**:
 
 - **`tomstuder/baker-app`** (this repo): app code only. Pushing to `main` deploys.
 - **`tomstuder/Recipes`**: all content, i.e. the "database". **Its README is the spec for every file format.** The app reads it live and writes to it through the GitHub API, so content changes need no deploy.
@@ -35,9 +35,9 @@ Deploy: pushing to `main` runs `.github/workflows/deploy.yml` (Pages `build_type
 - `/` home
 - `/calculator`
 - `/recipes`, `/recipes/:slug`, `/recipes/new`, `/recipes/:slug/edit`, `/recipes/:slug/bakes/new`, `/recipes/:slug/bakes/:bake/edit`
-- `/diary`, `/diary/:slug`, `/diary/new`, `/diary/:slug/edit`
+- `/journal`, `/journal/:slug`, `/journal/new`, `/journal/:slug/edit` (the journal was called the diary: `/diary/*` redirects, and the content folder, `config.yml` key and code names are still `diary`)
 - `/references?tab=converter|techniques|glossary|library`, `/references/techniques/:slug` (plus `/new` and `/:slug/edit`), `/references/edit/glossary|library|conversions`
-- `/edit/home`, `/edit/categories?from=recipes|diary`
+- `/edit/home`, `/edit/categories?from=recipes|journal`
 
 **Reading content** (`lib/content.ts`):
 - `getSnapshot()` makes 2 GitHub API calls (`branches/main`, then the recursive `git/trees`) and caches the result 5 minutes in sessionStorage. Visitors without a token get only 60 API calls an hour, so never add per-file API reads.
