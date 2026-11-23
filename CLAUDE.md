@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-"Bake Book": a personal baking web app (calculator, recipes with bake logs, journal, references, bio home page). It's a static React site on GitHub Pages at https://tomstuder.github.io/baker-app/. There are **two repos**:
+"Bake Book": a personal baking web app (calculator, recipes with bake logs, journal, references, bio home page). It's a static React site on GitHub Pages at https://kitchen.tomstuder.com/ (custom domain; the old https://tomstuder.github.io/baker-app/ address redirects there). There are **two repos**:
 
 - **`tomstuder/baker-app`** (this repo): app code only. Pushing to `main` deploys.
 - **`tomstuder/Recipes`**: all content, i.e. the "database". **Its README is the spec for every file format.** The app reads it live and writes to it through the GitHub API, so content changes need no deploy.
@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```sh
-npm run dev       # http://localhost:5173/baker-app/ (the /baker-app/ base path is required); reads live Recipes
+npm run dev       # http://localhost:5173/ ; reads live Recipes
 npm test          # vitest run
 npx vitest run src/lib/bakers.test.ts      # one file
 npx vitest run -t "overall hydration"      # by test name
@@ -28,7 +28,8 @@ Deploy: pushing to `main` runs `.github/workflows/deploy.yml` (Pages `build_type
 **Stack:** Vite + React 19 + TypeScript, Tailwind v4 via `@tailwindcss/vite` (the theme lives in `src/index.css`; there's no tailwind.config), shadcn/ui `radix-nova` + lucide, `yaml`, `react-markdown` + `remark-gfm`, `@dnd-kit`, `sonner`. The `@/` alias points to `src/` (vite.config.ts + tsconfigs).
 
 **GitHub Pages constraints:**
-- `base: '/baker-app/'` in `vite.config.ts` must match the repo name (use `'/'` with a custom domain).
+- `base: './'` in `vite.config.ts` (relative), so one build works at the custom domain's root and under `/baker-app/`.
+- Custom domain `kitchen.tomstuder.com`: set in the repo's Pages settings (no `CNAME` file is needed with workflow deploys). DNS is at Bluehost (`tomstuder.com` stays hosted there, so never move its nameservers): a CNAME `kitchen` → `tomstuder.github.io`, and a TXT `_github-pages-challenge-tomstuder` that verifies the domain to the GitHub account.
 - `HashRouter` (`src/main.tsx`), because Pages can't rewrite deep links.
 
 **Routing:** `src/App.tsx`. Every route is nested in `components/layout.tsx` (header, mobile Sheet menu, footer with social links and "Owner sign-in"). Menu entries come from `lib/nav.ts`. Editor pages are `lazy()` routes, so visitors never download dnd-kit or the editors. Routes:
@@ -66,7 +67,7 @@ Deploy: pushing to `main` runs `.github/workflows/deploy.yml` (Pages `build_type
   - **Invariant:** re-saving an unchanged file must reproduce it byte for byte (there are tests), so commits show only real edits.
 - `components/editor/`: `fields.tsx` (`TextField`, `MarkdownField` with an optional "Insert photo", `ImageField`, `PhotosField`), `save-bar.tsx` (commit message, Save, unsaved-changes warning), `edit-guard.tsx`, and `sortable.tsx` + `sortable-utils.ts` (dnd-kit rows; `withKey` adds editor-only row keys that serializers never write). Photos are resized in the browser (`lib/image.ts`: 2000 px JPEG) and uploaded immediately as their own commit.
 
-**Link previews:** static Open Graph / Twitter tags in `index.html` (absolute URLs to `https://tomstuder.github.io/baker-app/`, update them if the domain changes) plus `public/og-image.jpg` (1200 × 630, cropped from the home photo). They're site-wide: the `#/…` part of a URL never reaches the server, and preview crawlers don't run JS, so per-page tags can't be set at runtime.
+**Link previews:** static Open Graph / Twitter tags in `index.html` (absolute URLs to `https://kitchen.tomstuder.com/`; update them if the domain changes) plus `public/og-image.jpg` (1200 × 630, cropped from the home photo). They're site-wide: the `#/…` part of a URL never reaches the server, and preview crawlers don't run JS, so per-page tags can't be set at runtime.
 
 **Backlog:**
 - Per-recipe/post link previews: a build step generates `s/<slug>/index.html` share pages (OG tags from the item's title, summary and photo as an absolute raw.githubusercontent URL, then a redirect to the `#/…` route), a Share button that copies the share URL, and a rebuild triggered by pushes to `Recipes` (`repository_dispatch` from a Recipes workflow, using a token secret allowed to run this repo's Actions). Not started.

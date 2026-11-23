@@ -4,7 +4,8 @@ A personal baking web app: a baker's percentage calculator, recipes with a log o
 journal, and a references library. It's a static site on GitHub Pages with **no database**. All
 content lives as plain files in a separate git repo, so every change has a history.
 
-- **Live site:** https://tomstuder.github.io/baker-app/
+- **Live site:** https://kitchen.tomstuder.com/ (the old https://tomstuder.github.io/baker-app/
+  links redirect there)
 - **App code (this repo):** https://github.com/tomstuder/baker-app
 - **Content:** https://github.com/tomstuder/Recipes. Recipes, bakes, journal posts, references and photos
   live there (journal posts are in the `diary/` folder). Its README documents the file formats.
@@ -117,7 +118,7 @@ You'll need [Node.js](https://nodejs.org/) 24 or newer.
 git clone https://github.com/tomstuder/baker-app.git
 cd baker-app
 npm install
-npm run dev        # http://localhost:5173/baker-app/  (the /baker-app/ path is required)
+npm run dev        # http://localhost:5173/
 ```
 
 | Command | Purpose |
@@ -162,8 +163,21 @@ Every push to `main` runs [`.github/workflows/deploy.yml`](.github/workflows/dep
 builds the site and publishes it to GitHub Pages in about a minute. You can also run it by hand from
 the **Actions** tab. Content changes in `Recipes` don't need a deploy; the app reads them live.
 
-If this repo is renamed, or a custom domain is added, update `base` in `vite.config.ts`
-(`'/'` for a custom domain).
+### Custom domain
+
+The site is served at **kitchen.tomstuder.com**, set under this repo's **Settings → Pages →
+Custom domain** with **Enforce HTTPS** on. `tomstuder.com` itself stays at Bluehost; its DNS
+there has two records for this site (never move the domain's nameservers, which would take the
+main site offline):
+
+| Type | Host | Value | Purpose |
+| --- | --- | --- | --- |
+| CNAME | `kitchen` | `tomstuder.github.io` | points the subdomain at GitHub Pages |
+| TXT | `_github-pages-challenge-tomstuder` | code from GitHub | verifies the domain to the GitHub account, so nobody else can use it |
+
+`base: './'` in `vite.config.ts` makes the build work at any path, so moving to another domain
+only needs the Pages setting, DNS, and the absolute URLs in the preview tags in `index.html`.
+Sign-in is stored per address: after a domain change, sign in once more with the token.
 
 ## Planned
 
