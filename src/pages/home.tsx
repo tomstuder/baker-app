@@ -125,7 +125,7 @@ export function HomePage() {
           {loading ? (
             <Skeleton className="h-40 rounded-xl" />
           ) : data?.latestPost ? (
-            <Link to="/diary" className="group block">
+            <Link to={`/diary/${data.latestPost.slug}`} className="group block">
               <Card className="transition-colors group-hover:border-primary/50">
                 <CardContent className="space-y-2">
                   {data.latestPost.date && <p className="text-sm text-muted-foreground">{formatDate(data.latestPost.date)}</p>}

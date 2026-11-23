@@ -249,7 +249,7 @@ function BakeForm({ recipe, initial, isNew, snap }: { recipe: Recipe; initial: B
             <CardTitle>Notes</CardTitle>
           </CardHeader>
           <CardContent>
-            <MarkdownField value={b.body} onChange={(body) => update({ body })} file={path} snap={snap} placeholder="How did it go? Crumb, crust, flavor, what to try next time." />
+            <MarkdownField value={b.body} onChange={(body) => update({ body })} file={path} snap={snap} placeholder="How did it go? Crumb, crust, flavor, what to try next time." photoFolder={`recipes/${recipe.slug}/images`} />
           </CardContent>
         </Card>
       </div>

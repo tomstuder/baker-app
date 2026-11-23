@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { CalendarDays, Pencil, Plus, Star, Thermometer } from 'lucide-react'
 import { IfEditing } from '@/components/auth-control'
 import { Markdown } from '@/components/markdown'
@@ -21,6 +22,18 @@ export function Stars({ rating, className }: { rating?: number; className?: stri
 }
 
 export function BakeLog({ recipe, bakes, snap }: { recipe: string; bakes: Bake[]; snap?: Snapshot }) {
+  // Links like /recipes/x?bake=<id> (e.g. from a diary post) scroll to that bake and highlight it briefly.
+  const focus = useSearchParams()[0].get('bake')
+  useEffect(() => {
+    if (!focus) return
+    const el = document.getElementById(`bake-${focus}`)
+    if (!el) return
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    el.classList.add('ring-2', 'ring-primary')
+    const t = setTimeout(() => el.classList.remove('ring-2', 'ring-primary'), 2500)
+    return () => clearTimeout(t)
+  }, [focus, bakes])
+
   const rated = bakes.filter((b) => b.rating)
   const avg = rated.length ? rated.reduce((a, b) => a + b.rating!, 0) / rated.length : undefined
 
@@ -69,7 +82,7 @@ function BakeCard({ bake: b, snap }: { bake: Bake; snap?: Snapshot }) {
   ].filter(([, v]) => v) as [string, string][]
 
   return (
-    <Card id={`bake-${b.id}`} className="scroll-mt-20">
+    <Card id={`bake-${b.id}`} className="scroll-mt-20 transition-shadow">
       <CardContent className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>

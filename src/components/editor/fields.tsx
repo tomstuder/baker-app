@@ -48,34 +48,86 @@ export function MarkdownField({
   file,
   snap,
   placeholder,
+  photoFolder,
 }: {
   value: string
   onChange: (v: string) => void
   file: string
   snap?: Snapshot
   placeholder?: string
+  /** Repo folder for "Insert photo" uploads; omit to hide the button. */
+  photoFolder?: string
 }) {
+  const area = useRef<HTMLTextAreaElement>(null)
+  const picker = useRef<HTMLInputElement>(null)
+  const { upload, busy, error, urls } = usePhotoUpload(file, photoFolder ?? '')
+
+  async function insertPhotos(files: File[]) {
+    const at = area.current?.selectionStart ?? value.length
+    const snippets: string[] = []
+    for (const f of files) {
+      const rel = await upload(f)
+      if (rel) snippets.push(`![${f.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ')}](${rel})`)
+    }
+    if (!snippets.length) return
+    const before = value.slice(0, at).replace(/\s*$/, '')
+    const after = value.slice(at).replace(/^\s*/, '')
+    onChange(`${before}${before ? '\n\n' : ''}${snippets.join('\n\n')}\n\n${after}`)
+  }
+
   return (
     <Tabs defaultValue="write">
-      <TabsList>
-        <TabsTrigger value="write">Write</TabsTrigger>
-        <TabsTrigger value="preview">Preview</TabsTrigger>
-      </TabsList>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <TabsList>
+          <TabsTrigger value="write">Write</TabsTrigger>
+          <TabsTrigger value="preview">Preview</TabsTrigger>
+        </TabsList>
+        {photoFolder && (
+          <>
+            <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => picker.current?.click()}>
+              {busy ? <Loader2 className="animate-spin" /> : <ImagePlus />}
+              {busy ? 'Uploading…' : 'Insert photo'}
+            </Button>
+            <input
+              ref={picker}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              aria-label="Insert photo"
+              onChange={(e) => {
+                const files = [...(e.target.files ?? [])]
+                e.target.value = ''
+                void insertPhotos(files)
+              }}
+            />
+          </>
+        )}
+      </div>
       <TabsContent value="write">
         <Textarea
+          ref={area}
           aria-label="Text (Markdown)"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           className="min-h-80 font-mono text-sm leading-6"
         />
+        {error && <p className="mt-1.5 text-xs text-destructive">{error}</p>}
         <p className="mt-1.5 text-xs text-muted-foreground">
           Markdown: <code>## Heading</code>, <code>1.</code> numbered steps, <code>-</code> bullets, <code>**bold**</code>.
+          {photoFolder && ' Photos are placed at the cursor.'}
         </p>
       </TabsContent>
       <TabsContent value="preview">
         <div className="min-h-80 rounded-lg border p-4">
-          {value.trim() ? <Markdown file={file} snap={snap}>{value}</Markdown> : <p className="text-muted-foreground">Nothing to preview yet.</p>}
+          {value.trim() ? (
+            <Markdown file={file} snap={snap} imageUrls={urls}>
+              {value}
+            </Markdown>
+          ) : (
+            <p className="text-muted-foreground">Nothing to preview yet.</p>
+          )}
         </div>
       </TabsContent>
     </Tabs>
@@ -186,7 +238,7 @@ function usePhotoUpload(file: string, folder: string) {
     }
   }
 
-  return { upload, busy, error, urlFor: (rel: string) => urls[rel] }
+  return { upload, busy, error, urls, urlFor: (rel: string) => urls[rel] }
 }
 
 /** Several photos (e.g. for a bake): thumbnails, add and remove. */

@@ -14,8 +14,10 @@ import { RecipePage } from '@/pages/recipe'
 const RecipeEditPage = lazy(() => import('@/pages/recipe-edit').then((m) => ({ default: m.RecipeEditPage })))
 const HomeEditPage = lazy(() => import('@/pages/home-edit').then((m) => ({ default: m.HomeEditPage })))
 const BakeEditPage = lazy(() => import('@/pages/bake-edit').then((m) => ({ default: m.BakeEditPage })))
+const DiaryEditPage = lazy(() => import('@/pages/diary-edit').then((m) => ({ default: m.DiaryEditPage })))
 const editorFallback = <Skeleton className="h-96 w-full rounded-xl" />
 import { DiaryPage } from '@/pages/diary'
+import { DiaryPostPage } from '@/pages/diary-post'
 import { ReferencesPage } from '@/pages/references'
 import { NotFoundPage } from '@/pages/not-found'
 
@@ -44,6 +46,9 @@ function AppRoutes() {
         <Route path="recipes/:slug/bakes/:bake/edit" element={<Suspense fallback={editorFallback}><BakeEditPage /></Suspense>} />
         <Route path="edit/home" element={<Suspense fallback={editorFallback}><HomeEditPage /></Suspense>} />
         <Route path="diary" element={<DiaryPage />} />
+        <Route path="diary/new" element={<Suspense fallback={editorFallback}><DiaryEditPage /></Suspense>} />
+        <Route path="diary/:slug" element={<DiaryPostPage />} />
+        <Route path="diary/:slug/edit" element={<Suspense fallback={editorFallback}><DiaryEditPage /></Suspense>} />
         <Route path="references" element={<ReferencesPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>

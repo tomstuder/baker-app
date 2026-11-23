@@ -2,13 +2,13 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { Plus, X } from 'lucide-react'
 import { IfEditing } from '@/components/auth-control'
 import { ContentError } from '@/components/content-error'
+import { Chip } from '@/components/filter-chip'
 import { PageHeader } from '@/components/page-header'
 import { RecipeCard } from '@/components/recipe-card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useContent } from '@/hooks/use-content'
 import { loadConfig, loadRecipes, type Snapshot } from '@/lib/content'
-import { cn } from '@/lib/utils'
 
 async function load(snap: Snapshot) {
   const [config, recipes] = await Promise.all([loadConfig(snap), loadRecipes(snap)])
@@ -102,21 +102,5 @@ export function RecipesPage() {
         )
       )}
     </>
-  )
-}
-
-function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
-        active ? 'border-primary bg-primary text-primary-foreground [&_span]:text-primary-foreground/75' : 'hover:border-primary/50',
-      )}
-    >
-      {children}
-    </button>
   )
 }

@@ -50,7 +50,8 @@ Deploy: every push to `main` runs `.github/workflows/deploy.yml`, which builds a
   - `/recipes/:slug` shows one recipe.
   - `/recipes/new`, `/recipes/:slug/edit` and `/edit/home` are the editors (wrapped in `EditGuard`).
   - `/recipes/:slug/bakes/new` and `/recipes/:slug/bakes/:bake/edit` add and edit bakes (with delete).
-  - The diary and references pages are still placeholders.
+  - `/diary` lists posts with category and tag filters, `/diary/:slug` shows a post (cover, Markdown, related recipe and bake cards, older/newer links), and `/diary/new` and `/diary/:slug/edit` are the editors (with delete).
+  - The references page is still a placeholder.
 - **Editing (built):**
   - Auth: `components/auth-provider.tsx` (sign-in and unlock dialogs) plus `lib/auth-context.ts` (`useAuth`: status `signed-out` | `locked` | `unlocked`). `lib/token-vault.ts` encrypts the token with AES-GCM using a PBKDF2 key from the passphrase; only the ciphertext is stored (`auth:vault:v1`), and the plain token lives in memory. Only fine-grained `github_pat_` tokens are accepted.
   - Visitors see no edit controls. `components/auth-control.tsx` has the header lock control, the footer "Owner sign-in" link and `<IfEditing>` for edit buttons.
@@ -60,6 +61,10 @@ Deploy: every push to `main` runs `.github/workflows/deploy.yml`, which builds a
   - One file per bake at `recipes/<slug>/bakes/<date>[-title][-n].md`. `toBake` and `serializeBake` handle date, title, rating 1–5, batch, changes[], temps {kitchen, dough, oven}, timeline[{time, step}] (written as one quoted line per step) and photos[] (paths relative to the bake file, e.g. `../images/x.jpg`).
   - `newBakePath` avoids name clashes, `bakeCounts(snap)` counts bakes from the file list alone (shown on recipe cards), and `components/bake-log.tsx` renders the log on the recipe page.
   - `deleteFile` in `lib/github.ts` removes a bake, which stays in git history.
+- **Diary (built):**
+  - Files are `diary/<date>-<slug>.md` (`newDiaryPath` avoids clashes) with title, date, category, tags, image (cover) and `related` refs: `recipe-slug` or `recipe-slug/bake-id`, resolved by `lib/related.ts`. `serializeDiary` writes them.
+  - Bake links go to `/recipes/<slug>?bake=<id>`; `BakeLog` scrolls to that card and highlights it.
+  - `MarkdownField` has an optional `photoFolder` that adds "Insert photo" (upload, then `![](rel)` at the cursor). The preview uses `Markdown`'s `imageUrls` for photos uploaded but not yet in the snapshot. It's enabled for diary, recipe and bake text.
 - **Reordering:** ingredient rows (within and between groups) and bake timeline steps can be dragged with `@dnd-kit` (`components/editor/sortable.tsx`: `SortableRow` and `DragHandle`; helpers in `sortable-utils.ts`). Rows carry an editor-only `key` (`withKey`) that the serializers never write. ↑ ↓ buttons remain as a fallback.
 - **Code splitting:** the editor pages are `lazy()` routes in `App.tsx`, so visitors never download dnd-kit or the editors.
   - Photos: `ImageField` resizes in the browser (`lib/image.ts`, 2000 px JPEG) and uploads right away as its own commit to `recipes/<slug>/images/` or `images/home/`. `PhotosField` does the same for several photos. Stored paths are relative to the content file (`relativePath`).
@@ -79,7 +84,7 @@ Deploy: every push to `main` runs `.github/workflows/deploy.yml`, which builds a
 - **Calculator scope:** multiple flours, ingredients as % of total flour, total hydration including water in milk, eggs and butter, preferments (levain, poolish, biga) with their own hydration, scaling by dough weight, loaf count or flour weight, and saving a formula into a recipe.
 - **Recipe log:** recipes plus individual bake entries (date, tweaks, temperatures, timings, rating, photos). Diary posts can link to recipes and bakes. Photos are resized in the browser and committed to the repo.
 - **Categories and tags** (user request): recipes, diary posts and reference notes each get one category plus any number of free-form tags, stored in each file's header block. Categories come from a short, editable list per section. The lists live in the content repo's `config.yml`. Recipes: Bread, Enriched bread, Quick breads & muffins, Pastry, Cakes & cookies, Pizza & flatbread, Pasta & noodles, Starters & preferments. Diary: Bake log, Experiment, Learning, Kitchen notes. References: Techniques, Glossary, Links & books, Conversions. List and search views filter by category and tag.
-- **Build order:** 1) shell and deploy (done), 2) calculator (done), 3) content layer, token login, recipe and home editors, bake log (done); next, saving from the calculator, 4) diary (reading and editing), then references (reading and editing) and uploads.
+- **Build order:** 1) shell and deploy (done), 2) calculator (done), 3) content layer, token login, recipe and home editors, bake log (done); next, saving from the calculator, 4) diary (done), then references (reading and editing) and uploads.
 - **Units:** grams by default; temperatures in both °F and °C.
 
 ## Notes

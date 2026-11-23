@@ -44,15 +44,18 @@ type Props = {
   file?: string
   snap?: Snapshot
   className?: string
+  /** Image URLs for photos uploaded in this editing session (not in the snapshot yet), by relative path. */
+  imageUrls?: Record<string, string>
 }
 
-export function Markdown({ children, file, snap, className }: Props) {
+export function Markdown({ children, file, snap, className, imageUrls }: Props) {
   return (
     <div className={cn('text-foreground [&>:first-child]:mt-0', className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={components}
         urlTransform={(url, key) => {
+          if (key === 'src' && imageUrls?.[url]) return imageUrls[url]
           if (key === 'src' && snap && file && !/^[a-z]+:|^\/\//i.test(url)) return assetUrl(snap, file, url) ?? ''
           return defaultUrlTransform(url)
         }}

@@ -240,6 +240,8 @@ export type DiaryPost = {
   category?: string
   tags: string[]
   image?: string
+  /** Linked recipes ("sourdough-base") or bakes ("sourdough-base/2026-11-20-higher-hydration"). */
+  related: string[]
   excerpt: string
   body: string
 }
@@ -348,9 +350,26 @@ export function toDiaryPost(path: string, text: string): DiaryPost {
     category: str(d.category),
     tags: strList(d.tags),
     image: str(d.image),
+    related: strList(d.related),
     excerpt: excerptOf(body),
     body,
   }
+}
+
+/** Repo path for a new diary post, avoiding names already taken. */
+export function newDiaryPath(snap: Snapshot | undefined, date: string, title: string): string {
+  const slug = title
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 50)
+    .replace(/-+$/, '')
+  const base = `diary/${date}${slug ? `-${slug}` : ''}`
+  let path = `${base}.md`
+  for (let n = 2; snap?.files.has(path); n++) path = `${base}-${n}.md`
+  return path
 }
 
 /** Used until home.md loads, or if it can't be loaded. */
@@ -466,7 +485,13 @@ export async function loadBake(snap: Snapshot, recipe: string, id: string): Prom
 export async function loadDiary(snap: Snapshot): Promise<DiaryPost[]> {
   const paths = [...snap.files.keys()].filter((p) => DIARY_PATH.test(p))
   const posts = await Promise.all(paths.map(async (p) => toDiaryPost(p, (await readText(snap, p)) ?? '')))
-  return posts.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
+  return posts.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '') || b.slug.localeCompare(a.slug))
+}
+
+export async function loadDiaryPost(snap: Snapshot, slug: string): Promise<DiaryPost | null> {
+  const path = `diary/${slug}.md`
+  const text = await readText(snap, path)
+  return text === null ? null : toDiaryPost(path, text)
 }
 
 export async function loadHome(snap: Snapshot): Promise<Home> {

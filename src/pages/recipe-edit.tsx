@@ -221,7 +221,7 @@ function RecipeForm({ initial, categories, isNew, snap, sha }: { initial: Recipe
             <CardTitle>Method &amp; notes</CardTitle>
           </CardHeader>
           <CardContent>
-            <MarkdownField value={r.body} onChange={(body) => update({ body })} file={path} snap={snap} placeholder={'## Method\n\n1. Mix…'} />
+            <MarkdownField value={r.body} onChange={(body) => update({ body })} file={path} snap={snap} placeholder={'## Method\n\n1. Mix…'} photoFolder={slug ? `recipes/${slug}/images` : undefined} />
           </CardContent>
         </Card>
 

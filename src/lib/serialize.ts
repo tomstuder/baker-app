@@ -3,7 +3,7 @@
  * Output mirrors the hand-written style: block YAML, with tags and each ingredient on one line.
  */
 import { Document, Scalar, isMap, isPair, isScalar, isSeq } from 'yaml'
-import type { Bake, Home, IngredientGroup, IngredientItem, Recipe } from '@/lib/content'
+import type { Bake, DiaryPost, Home, IngredientGroup, IngredientItem, Recipe } from '@/lib/content'
 
 export function slugify(text: string): string {
   return text
@@ -148,4 +148,16 @@ export function serializeBake(b: Bake): string {
       if (isScalar(time)) time.type = Scalar.QUOTE_DOUBLE
     }
   })
+}
+
+export function serializeDiary(p: DiaryPost): string {
+  const data = clean({
+    title: p.title.trim(),
+    date: p.date,
+    category: p.category,
+    tags: p.tags.map((t) => t.trim()).filter(Boolean),
+    image: p.image,
+    related: p.related,
+  })
+  return toFile(data, p.body, [['tags']])
 }
